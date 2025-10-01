@@ -1,25 +1,41 @@
 package com.example.rental.entity;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
-@Table(name = "maintenancerequests")
-public class MaintenanceRequest {
+@Table(name = "maintenance_requests")
+public class MaintenanceRequest extends BaseEntity { // Kế thừa BaseEntity để có created_at/updated_at
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "request_id")
     private Long id;
 
-    @Column(name = "room_id")
-    private Long roomId;
+    @Column(name = "request_code", unique = true, nullable = false, length = 20)
+    private String requestCode;
 
-    @Column(name = "tenant_id")
-    private Long tenantId;
+    // QUAN HỆ: Người thuê gửi yêu cầu - Bắt buộc
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tenant_id", nullable = false)
+    private Tenant tenant;
 
+    // QUAN HỆ: Phòng có sự cố - Bắt buộc
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "room_id", nullable = false)
+    private Room room;
+
+    @Lob
+    @Column(nullable = false)
     private String description;
-    private String status;
-    private LocalDateTime created_at;
 
-    // Getters and setters
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private MaintenanceStatus status; // Sử dụng Enum MaintenanceStatus
 }

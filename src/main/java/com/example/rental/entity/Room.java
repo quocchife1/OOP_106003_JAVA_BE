@@ -1,27 +1,46 @@
 package com.example.rental.entity;
 
 import jakarta.persistence.*;
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "rooms")
 public class Room {
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "room_id")
     private Long id;
 
-    @Column(name = "property_id")
-    private Long propertyId;
+    @Column(name = "room_code", unique = true, nullable = false, length = 20)
+    private String roomCode;
 
-    @Column(name = "room_number")
+    // QUAN HỆ: Phòng thuộc về một Chi nhánh (NOT NULL)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "branch_id", nullable = false)
+    private Branch branch;
+
+    @Column(name = "room_number", length = 100)
     private String roomNumber;
 
-    private BigDecimal price;
-    private String status;
-    private Double area;
-    private LocalDateTime created_at;
+    @Column(precision = 5, scale = 2)
+    private BigDecimal area;
 
-    // Getters and setters
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal price;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20, nullable = false)
+    private RoomStatus status; // Sử dụng Enum RoomStatus
+
+    @Lob // Dùng cho trường TEXT
+    private String description;
 }

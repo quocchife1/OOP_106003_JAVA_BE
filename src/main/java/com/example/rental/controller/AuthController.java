@@ -4,12 +4,9 @@ import com.example.rental.dto.ApiResponseDto;
 import com.example.rental.dto.auth.AuthLoginRequest;
 import com.example.rental.dto.auth.AuthRegisterRequest;
 import com.example.rental.dto.auth.AuthResponse;
+import com.example.rental.dto.auth.EmployeeRegisterRequest; // NEW IMPORT
+import com.example.rental.dto.auth.PartnerRegisterRequest; // NEW IMPORT
 import com.example.rental.service.AuthService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,35 +17,48 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Auth API", description = "Đăng ký, đăng nhập người dùng")
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@Tag(name = "Authentication")
 public class AuthController {
 
     private final AuthService authService;
 
-    @PostMapping("/register")
-    @Operation(summary = "Đăng ký tài khoản người dùng", description = "Tạo người dùng mới")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Đăng ký thành công", content = @Content),
-            @ApiResponse(responseCode = "400", description = "Thông tin đăng ký đã tồn tại", content = @Content)
-    })
-    public ResponseEntity<ApiResponseDto<String>> register(@Valid @RequestBody AuthRegisterRequest request) {
-        authService.register(request);
+    @PostMapping("/register/guest")
+    public ResponseEntity<ApiResponseDto<Void>> registerGuest(@Valid @RequestBody AuthRegisterRequest request) {
+        authService.registerGuest(request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponseDto.success(201, "Đăng ký thành công"));
+                .body(ApiResponseDto.success(HttpStatus.CREATED.value(), "Guest registered successfully"));
+    }
+    
+    @PostMapping("/register/tenant")
+    public ResponseEntity<ApiResponseDto<Void>> registerTenant(@Valid @RequestBody AuthRegisterRequest request) {
+        authService.registerTenant(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponseDto.success(HttpStatus.CREATED.value(), "Tenant registered successfully"));
     }
 
+    // NEW ENDPOINT: Đăng ký Đối tác
+    @PostMapping("/register/partner")
+    public ResponseEntity<ApiResponseDto<Void>> registerPartner(@Valid @RequestBody PartnerRegisterRequest request) {
+        authService.registerPartner(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponseDto.success(HttpStatus.CREATED.value(), "Partner registered successfully"));
+    }
+
+    // NEW ENDPOINT: Đăng ký Nhân viên (Dùng cho Admin tạo tài khoản nhân viên mới)
+    @PostMapping("/register/employee")
+    public ResponseEntity<ApiResponseDto<Void>> registerEmployee(@Valid @RequestBody EmployeeRegisterRequest request) {
+        authService.registerEmployee(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponseDto.success(HttpStatus.CREATED.value(), "Employee registered successfully"));
+    }
+
+
     @PostMapping("/login")
-    @Operation(summary = "Đăng nhập người dùng", description = "Trả về JWT access token")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Đăng nhập thành công",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = AuthResponse.class))),
-            @ApiResponse(responseCode = "401", description = "Thông tin đăng nhập không hợp lệ", content = @Content)
-    })
     public ResponseEntity<ApiResponseDto<AuthResponse>> login(@Valid @RequestBody AuthLoginRequest request) {
-        AuthResponse authRes = authService.login(request);
-        return ResponseEntity.ok(ApiResponseDto.success(200, "Đăng nhập thành công", authRes));
+        AuthResponse authResponse = authService.login(request);
+        return ResponseEntity.ok(ApiResponseDto.success(HttpStatus.OK.value(), "Login successful", authResponse));
     }
 }
