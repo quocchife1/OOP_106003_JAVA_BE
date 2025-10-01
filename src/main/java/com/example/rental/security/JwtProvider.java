@@ -22,7 +22,7 @@ public class JwtProvider {
         User userPrincipal = (User) authentication.getPrincipal();
         return Jwts.builder()
                 .setSubject(userPrincipal.getUsername())
-                .claim("roles", userPrincipal.getUsername())
+                .claim("roles", userPrincipal.getAuthorities())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(new Date().getTime() + jwtProperties.getExpirationMs()))
                 .signWith(key(), SignatureAlgorithm.HS256)

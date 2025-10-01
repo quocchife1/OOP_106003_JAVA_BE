@@ -15,7 +15,7 @@ import java.math.BigDecimal;
 @Entity
 @Table(name = "rooms")
 public class Room {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -23,12 +23,14 @@ public class Room {
     @Column(name = "room_code", unique = true, nullable = false, length = 20)
     private String roomCode;
 
-    // QUAN HỆ: Phòng thuộc về một Chi nhánh (NOT NULL)
+    @Column(name = "branch_code", nullable = false, length = 10)
+    private String branchCode;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "branch_id", nullable = false)
     private Branch branch;
 
-    @Column(name = "room_number", length = 100)
+    @Column(name = "room_number", length = 100, nullable = false)
     private String roomNumber;
 
     @Column(precision = 5, scale = 2)
@@ -39,8 +41,8 @@ public class Room {
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20, nullable = false)
-    private RoomStatus status; // Sử dụng Enum RoomStatus
+    private RoomStatus status;
 
-    @Lob // Dùng cho trường TEXT
+    @Lob
     private String description;
 }

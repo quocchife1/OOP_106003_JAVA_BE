@@ -8,7 +8,7 @@ import java.util.Collection;
 
 @Getter
 public class CustomUserDetails extends User {
-    private final String userRole; // e.g., "GUEST", "TENANT"
+    private final String userRole;
 
     public CustomUserDetails(String username, String password, Collection<? extends GrantedAuthority> authorities, String userRole) {
         super(username, password, authorities);

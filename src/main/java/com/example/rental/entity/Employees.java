@@ -40,7 +40,7 @@ public class Employees extends BaseEntity {
     private String phoneNumber;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "branch_id")
+    @JoinColumn(name = "branch_code", referencedColumnName = "branch_code")
     private Branch branch;
 
     @Enumerated(EnumType.STRING)

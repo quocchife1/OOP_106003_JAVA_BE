@@ -15,11 +15,9 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class EmployeeRegisterRequest extends AuthRegisterRequest {
 
-    // Kế thừa: username, password, email, phone, fullName, dob
-
-    @Schema(description = "ID chi nhánh làm việc", example = "1")
-    @NotNull(message = "ID chi nhánh không được để trống")
-    private Long branchId;
+    @Schema(description = "Mã chi nhánh làm việc", example = "CN01")
+    @NotNull(message = "Mã chi nhánh không được để trống")
+    private String branchCode;
 
     @Schema(description = "Chức vụ", example = "RECEPTIONIST")
     @NotNull(message = "Chức vụ không được để trống")
@@ -32,5 +30,4 @@ public class EmployeeRegisterRequest extends AuthRegisterRequest {
     @Schema(description = "Ngày bắt đầu làm việc", example = "2024-02-01")
     @NotNull(message = "Ngày được thuê nhân viên không được để trống")
     private LocalDate hireDate;
-    
 }

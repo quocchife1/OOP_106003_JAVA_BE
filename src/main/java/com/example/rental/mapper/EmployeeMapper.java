@@ -18,9 +18,6 @@ public interface EmployeeMapper {
 
     List<EmployeeResponse> toResponseList(List<Employees> employees);
 
-    /**
-     * Chuyển đổi DTO EmployeeRegisterRequest sang Entity Employees.
-     */
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "password", ignore = true)
     @Mapping(target = "branch", ignore = true)

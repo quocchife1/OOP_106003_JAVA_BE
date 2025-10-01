@@ -1,24 +1,28 @@
 package com.example.rental.seeder;
 
 import com.example.rental.entity.Branch;
+import com.example.rental.entity.Room;
+import com.example.rental.entity.RoomStatus;
 import com.example.rental.repository.BranchRepository;
+import com.example.rental.repository.RoomRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+
+import java.math.BigDecimal;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
 public class DataSeeder implements CommandLineRunner {
 
     private final BranchRepository branchRepository;
-    // Nếu sau này có seeder khác, cứ inject thêm Repository vào đây
+    private final RoomRepository roomRepository;
 
     @Override
     public void run(String... args) {
         seedBranches();
-        // Thêm seed khác sau này:
-        // seedUsers();
-        // seedVehicles();
+        seedRooms(); // ✅ Gọi seed room sau khi seed branch
     }
 
     private void seedBranches() {
@@ -37,7 +41,7 @@ public class DataSeeder implements CommandLineRunner {
                     .build();
             branchRepository.save(b2);
 
-            // Cập nhật branchCode theo ID cho các bản ghi mới tạo
+            // Gán branchCode sau khi lưu để lấy được ID
             branchRepository.findAll().forEach(branch -> {
                 if (branch.getBranchCode() == null) {
                     branch.setBranchCode(generateBranchCode(branch.getId()));
@@ -45,6 +49,39 @@ public class DataSeeder implements CommandLineRunner {
                 }
             });
         }
+    }
+
+    private void seedRooms() {
+        if (roomRepository.count() == 0) {
+            List<Branch> branches = branchRepository.findAll();
+            if (branches.isEmpty()) {
+                System.out.println("⚠️ Không có dữ liệu Branch để seed Room!");
+                return;
+            }
+
+            for (Branch branch : branches) {
+                createRoomData(branch, "101", BigDecimal.valueOf(25.5), BigDecimal.valueOf(3500000), "Có máy lạnh, view đẹp");
+                createRoomData(branch, "102", BigDecimal.valueOf(20.0), BigDecimal.valueOf(3000000), "Có quạt, gần cửa sổ");
+            }
+        }
+    }
+
+    private void createRoomData(Branch branch, String roomNumber, BigDecimal area, BigDecimal price, String description) {
+        String branchCode = branch.getBranchCode();  // vd: CN01
+        String roomCode = branchCode + roomNumber;  // vd: CN01101
+
+        Room room = Room.builder()
+                .roomCode(roomCode)
+                .branchCode(branchCode)
+                .roomNumber(roomNumber)
+                .area(area)
+                .price(price)
+                .status(RoomStatus.AVAILABLE)
+                .description(description)
+                .branch(branch)
+                .build();
+
+        roomRepository.save(room);
     }
 
     private String generateBranchCode(Long id) {
