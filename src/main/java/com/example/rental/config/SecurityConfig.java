@@ -30,13 +30,22 @@ public class SecurityConfig {
         http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
+                        // .requestMatchers(
+                        // "/api/auth/**",
+                        // "/swagger-ui/**",
+                        // "/swagger-ui.html",
+                        // "/v3/api-docs/**").permitAll()
+                        // .requestMatchers("/api/rooms/**", "/api/branches/**").hasRole("ADMIN")
+                        // .anyRequest().authenticated()
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
-                                "/v3/api-docs/**").permitAll()
-                        .requestMatchers("/api/rooms/**", "/api/branches/**").hasRole("ADMIN")
-                        .anyRequest().authenticated()
+                                "/v3/api-docs/**",
+                                "/api/**" // Cho phép toàn bộ API để test
+                        ).permitAll()
+                        .anyRequest().permitAll()
+
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

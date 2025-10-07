@@ -20,17 +20,14 @@ public class RentalServiceItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "service_code", unique = true, nullable = false, length = 20)
-    private String serviceCode;
-
     @Column(name = "service_name", nullable = false, length = 100)
     private String serviceName;
 
     @Column(nullable = false, precision = 12, scale = 2)
-    private BigDecimal price; // Giá cơ bản của dịch vụ
+    private BigDecimal price;
 
     @Column(nullable = false, length = 20)
-    private String unit; // Đơn vị tính ('tháng', 'xe', 'lần')
+    private String unit;
 
     @Lob
     private String description;
