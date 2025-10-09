@@ -1,10 +1,7 @@
 package com.example.rental.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
@@ -18,37 +15,49 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "contracts")
 public class Contract {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // QUAN HỆ: Người thuê (Tenant) - Bắt buộc
+    // Quan hệ với người thuê
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tenant_id", nullable = false)
     private Tenant tenant;
 
-    // QUAN HỆ: Phòng (Room) - Bắt buộc
+    // Quan hệ với phòng (FK)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "room_id", nullable = false)
     private Room room;
 
+    // Denormalized snapshot (lưu branch + roomNumber tại thời điểm tạo hợp đồng)
+    @Column(name = "branch_code", length = 10, nullable = false)
+    private String branchCode;
+
+    @Column(name = "room_number", length = 100, nullable = false)
+    private String roomNumber;
+
     @Column(name = "start_date", nullable = false)
-    private LocalDate startDate; // Ngày bắt đầu thuê (DATE)
+    private LocalDate startDate;
 
     @Column(name = "end_date")
-    private LocalDate endDate; // Ngày kết thúc thuê (DATE)
+    private LocalDate endDate;
 
     @Column(precision = 12, scale = 2)
-    private BigDecimal deposit; // Tiền đặt cọc
+    private BigDecimal deposit;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20, nullable = false)
-    private ContractStatus status; // Sử dụng Enum ContractStatus
+    private ContractStatus status;
 
     @CreationTimestamp
-    @Column(name = "created_at")
     private LocalDateTime createdAt;
-    
-    // Bảng SQL không có updated_at, nên không kế thừa BaseEntity và chỉ dùng CreationTimestamp
+
+    // File hợp đồng mẫu PDF sinh tự động (snapshot link)
+    @Column(length = 255)
+    private String contractFileUrl;
+
+    // File hợp đồng đã ký, lưu trên BE (URL)
+    @Column(length = 255)
+    private String signedContractUrl;
 }

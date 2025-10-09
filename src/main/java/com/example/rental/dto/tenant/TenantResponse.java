@@ -1,21 +1,30 @@
 package com.example.rental.dto.tenant;
 
+import com.example.rental.entity.UserStatus;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import java.time.LocalDateTime;
 
 @Data
 public class TenantResponse {
+
     private Long id;
-    private String tenantCode;
+
+    @Schema(description = "Tên đăng nhập", example = "quocchi5523")
     private String username;
+
+    @Schema(description = "Họ và tên", example = "Nguyễn Quốc Chí")
     private String fullName;
+
+    @Schema(description = "Email", example = "chinguyen123852@gmail.com")
     private String email;
+
+    @Schema(description = "Số điện thoại", example = "0359444856")
     private String phoneNumber;
-    private String avatarUrl;
-    private String cccd;
-    private String studentId;
-    private String university;
+
+    @Schema(description = "Địa chỉ", example = "123 Nguyễn Trãi, TP.HCM")
     private String address;
-    private String status;
-    private LocalDateTime createdAt;
+
+    @Schema(description = "Trạng thái người dùng", example = "ACTIVE")
+    private UserStatus status;
+
 }

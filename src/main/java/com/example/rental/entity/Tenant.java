@@ -12,94 +12,50 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Entity
 @Table(name = "tenants")
-public class Tenant extends BaseEntity { // Giả định BaseEntity chứa created_at và updated_at
-    
+public class Tenant extends BaseEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /**
-     * Mã người thuê (VD: T001).
-     * VARCHAR(10), UNIQUE, NOT NULL.
-     */
-    @Column(name = "tenant_code", unique = true, nullable = false, length = 10)
-    private String tenantCode;
-
-    /**
-     * Tên đăng nhập.
-     * VARCHAR(50), UNIQUE, NOT NULL.
-     */
+    /** Tên đăng nhập */
     @Column(unique = true, nullable = false, length = 50)
     private String username;
 
-    /**
-     * Mật khẩu.
-     * VARCHAR(255), NOT NULL.
-     */
+    /** Mật khẩu */
     @Column(nullable = false, length = 255)
     private String password;
 
-    /**
-     * Họ và tên đầy đủ.
-     * VARCHAR(100), NOT NULL.
-     */
+    /** Họ và tên */
     @Column(name = "full_name", nullable = false, length = 100)
     private String fullName;
 
-    /**
-     * Email.
-     * VARCHAR(100), UNIQUE (Có thể NULL).
-     */
+    /** Email */
     @Column(unique = true, length = 100)
     private String email;
 
-    /**
-     * Số điện thoại.
-     * VARCHAR(20). (Có thể NULL theo SQL của bạn).
-     */
+    /** Số điện thoại */
     @Column(name = "phone_number", length = 20)
     private String phoneNumber;
-    
-    /**
-     * URL ảnh đại diện.
-     * VARCHAR(255).
-     */
-    @Column(name = "avatar_url", length = 255)
-    private String avatarUrl;
 
-    /**
-     * Số CCCD/CMND.
-     * VARCHAR(20), UNIQUE.
-     */
+    /** Số CCCD/CMND */
     @Column(unique = true, length = 20)
     private String cccd;
-    
-    /**
-     * Mã số sinh viên (MSSV).
-     * VARCHAR(20).
-     */
+
+    /** Mã số sinh viên */
     @Column(name = "student_id", length = 20)
     private String studentId;
-    
-    /**
-     * Tên trường đại học.
-     * VARCHAR(100).
-     */
+
+    /** Tên trường đại học */
     @Column(length = 100)
     private String university;
-    
-    /**
-     * Địa chỉ.
-     * VARCHAR(255).
-     */
+
+    /** Địa chỉ */
     @Column(length = 255)
     private String address;
 
-    /**
-     * Trạng thái người dùng (ACTIVE/BANNED).
-     * ENUM.
-     */
+    /** Trạng thái người dùng (ACTIVE/BANNED) */
     @Enumerated(EnumType.STRING)
-    @Column(length = 20) // Độ dài nên đặt cho ENUM String
+    @Column(length = 20)
     private UserStatus status;
 }

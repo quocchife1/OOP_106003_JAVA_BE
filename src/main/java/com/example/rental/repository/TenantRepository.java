@@ -8,10 +8,7 @@ public interface TenantRepository extends JpaRepository<Tenant, Long> {
     Optional<Tenant> findByUsername(String username);
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
-
-    // Tìm người thuê theo mã người thuê
-    Optional<Tenant> findByTenantCode(String tenantCode);
-
-    // Tìm người thuê theo CCCD
     Optional<Tenant> findByCccd(String cccd);
+    boolean existsByCccd(String cccd);
+    boolean existsByStudentId(String studentId);
 }
