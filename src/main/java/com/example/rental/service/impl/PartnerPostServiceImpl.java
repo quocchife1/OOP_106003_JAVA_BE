@@ -1,11 +1,18 @@
 package com.example.rental.service.impl;
 
+import com.example.rental.dto.post.PartnerPostRequest;
+import com.example.rental.dto.post.PartnerPostResponse;
 import com.example.rental.entity.Employees;
 import com.example.rental.entity.PartnerPost;
+import com.example.rental.entity.Partners;
 import com.example.rental.entity.PostApprovalStatus;
+import com.example.rental.mapper.PartnerPostMapper;
 import com.example.rental.repository.EmployeeRepository;
 import com.example.rental.repository.PartnerPostRepository;
+import com.example.rental.repository.PartnerRepository;
 import com.example.rental.service.PartnerPostService;
+
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,13 +27,28 @@ public class PartnerPostServiceImpl implements PartnerPostService {
 
     private final PartnerPostRepository partnerPostRepository;
     private final EmployeeRepository employeeRepository;
+    private final PartnerRepository partnerRepository;
 
     @Override
     @Transactional
-    public PartnerPost createPost(PartnerPost post) {
-        // ĐÃ SỬA: Sử dụng PostApprovalStatus.PENDING
-        post.setStatus(PostApprovalStatus.PENDING_APPROVAL);
-        return partnerPostRepository.save(post);
+    public PartnerPostResponse createPost(PartnerPostRequest postRequest) {
+        Partners partner = partnerRepository.findById(postRequest.getPartnerId())
+            .orElseThrow(() -> new EntityNotFoundException("Partner not found"));
+        
+        PartnerPost partnerPost = PartnerPost.builder()
+                .partner(partner)
+                .title(postRequest.getTitle())
+                .description(postRequest.getDescription())
+                .price(postRequest.getPrice())
+                .area(postRequest.getArea())
+                .address(postRequest.getAddress())
+                .postType(postRequest.getPostType())
+                .status(PostApprovalStatus.PENDING_APPROVAL)
+                .build();
+
+        PartnerPost saved = partnerPostRepository.save(partnerPost);
+
+        return PartnerPostMapper.toResponse(saved);
     }
 
     @Override

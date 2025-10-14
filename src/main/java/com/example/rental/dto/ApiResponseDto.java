@@ -3,12 +3,14 @@ package com.example.rental.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApiResponseDto<T> {
 
@@ -25,14 +27,25 @@ public class ApiResponseDto<T> {
     private T data;
 
     public static <T> ApiResponseDto<T> success(int statusCode, String message) {
-        return new ApiResponseDto<>(statusCode, message, null, null);
+        return ApiResponseDto.<T>builder()
+                .statusCode(statusCode)
+                .message(message)
+                .build();
     }
 
     public static <T> ApiResponseDto<T> success(int statusCode, String message, T data) {
-        return new ApiResponseDto<>(statusCode, message, null, data);
+        return ApiResponseDto.<T>builder()
+                .statusCode(statusCode)
+                .message(message)
+                .data(data)
+                .build();
     }
 
     public static <T> ApiResponseDto<T> error(int statusCode, String message, String error) {
-        return new ApiResponseDto<>(statusCode, message, error, null);
+        return ApiResponseDto.<T>builder()
+                .statusCode(statusCode)
+                .message(message)
+                .error(error)
+                .build();
     }
 }

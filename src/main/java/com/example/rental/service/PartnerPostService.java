@@ -1,5 +1,7 @@
 package com.example.rental.service;
 
+import com.example.rental.dto.post.PartnerPostRequest;
+import com.example.rental.dto.post.PartnerPostResponse;
 import com.example.rental.entity.PartnerPost;
 import com.example.rental.entity.PostApprovalStatus;
 import java.util.List;
@@ -7,7 +9,7 @@ import java.util.Optional;
 
 public interface PartnerPostService {
     // Đối tác tạo tin đăng mới (Trạng thái ban đầu là PENDING)
-    PartnerPost createPost(PartnerPost post);
+    PartnerPostResponse createPost(PartnerPostRequest post);
 
     // Lấy tin đăng theo ID
     Optional<PartnerPost> findById(Long id);
