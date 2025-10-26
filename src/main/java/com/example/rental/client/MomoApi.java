@@ -11,5 +11,5 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 public interface MomoApi {
 
     @PostMapping("/create")
-    CreateMomoResponse createMomoQR(@RequestBody CreateMomoRequest createMomoRequest);
+    CreateMomoResponse createMomoATMPayment(@RequestBody CreateMomoRequest createMomoRequest);
 }

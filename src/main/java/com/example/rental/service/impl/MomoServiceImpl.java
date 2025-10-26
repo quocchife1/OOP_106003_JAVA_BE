@@ -22,22 +22,22 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MomoServiceImpl implements MomoService {
 
-    @Value(value = "MOMOBKUN20180529")
+    @Value(value = "${momo.partner-code}")
     private String PARTNER_CODE;
-    @Value(value = "klm05TvNBzhg7h7j")
+    @Value(value = "${momo.access-key}")
     private String ACCESS_KEY;
-    @Value(value = "at67qH6mk8w5Y1nAyMoYKMWACiEi2bsa")
+    @Value(value = "${momo.secret-key}")
     private String SECRET_KEY;
-    @Value(value = "http://localhost:3000/")
+    @Value(value = "${momo.redirect-url}")
     private String REDIRECT_URL;
-    @Value(value = "http://localhost:8080/api/momo/ipn-handler")
+    @Value(value = "${momo.ipn-url}")
     private String IPN_URL;
-    @Value(value = "captureWallet")
+    @Value(value = "${momo.request-type}")
     private String REQUEST_TYPE;
 
     private final MomoApi momoApi;
 
-    public CreateMomoResponse createQR(){
+    public CreateMomoResponse createATMPayment(){
 
         String orderId = UUID.randomUUID().toString();
         String orderInfo = "Thanh toan don hang: " + orderId;
@@ -76,7 +76,7 @@ public class MomoServiceImpl implements MomoService {
                 .lang("vi")
                 .build();
 
-        return momoApi.createMomoQR(request);
+        return momoApi.createMomoATMPayment(request);
     }
 
     private String signHmacSHA256(String data, String key) throws Exception {

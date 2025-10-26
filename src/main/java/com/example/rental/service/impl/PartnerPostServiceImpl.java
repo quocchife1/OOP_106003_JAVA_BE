@@ -43,12 +43,15 @@ public class PartnerPostServiceImpl implements PartnerPostService {
                 .area(postRequest.getArea())
                 .address(postRequest.getAddress())
                 .postType(postRequest.getPostType())
-                .status(PostApprovalStatus.PENDING_APPROVAL)
+                .status(PostApprovalStatus.PENDING_PAYMENT)
                 .build();
 
         PartnerPost saved = partnerPostRepository.save(partnerPost);
 
-        return PartnerPostMapper.toResponse(saved);
+        // 2. Tạo URL thanh toán (ví dụ giả lập)
+        String paymentUrl = "https://momo.vn/pay?orderId=POST" + saved.getId();
+
+        return new PartnerPostResponse(saved.getId(), paymentUrl);
     }
 
     @Override

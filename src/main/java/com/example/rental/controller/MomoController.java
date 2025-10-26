@@ -17,7 +17,7 @@ public class MomoController {
     private final MomoService momoService;
 
     @PostMapping("create")
-    public CreateMomoResponse createQR(){
-        return momoService.createQR();
+    public CreateMomoResponse createATMPayment(){
+        return momoService.createATMPayment();
     }
 }
