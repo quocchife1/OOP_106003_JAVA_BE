@@ -4,6 +4,7 @@ import com.example.rental.entity.PartnerPost;
 import com.example.rental.entity.PostApprovalStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import java.util.Optional;
 
 import java.util.List;
 
@@ -14,4 +15,6 @@ public interface PartnerPostRepository extends JpaRepository<PartnerPost, Long> 
 
     // Tìm bài đăng theo trạng thái duyệt
     List<PartnerPost> findByStatus(PostApprovalStatus status);
+
+    Optional<PartnerPost> findByOrderId(String orderId);
 }

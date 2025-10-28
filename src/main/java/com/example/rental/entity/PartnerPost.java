@@ -30,6 +30,9 @@ public class PartnerPost {
     @JsonIgnore
     private Partners partner;
 
+    @Column(name = "order_id", unique = true) 
+    private String orderId;
+
     @Column(nullable = false, length = 200)
     private String title;
 
