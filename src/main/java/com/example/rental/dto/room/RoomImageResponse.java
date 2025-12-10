@@ -11,8 +11,4 @@ public class RoomImageResponse {
     private Long id;
     private String imageUrl;
     private boolean isThumbnail;
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> ThienTruong
