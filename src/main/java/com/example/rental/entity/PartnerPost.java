@@ -7,6 +7,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -25,7 +27,11 @@ public class PartnerPost {
     // QUAN HỆ: Đối tác đăng tin - Bắt buộc
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "partner_id", nullable = false)
+    @JsonIgnore
     private Partners partner;
+
+    @Column(name = "order_id", unique = true) 
+    private String orderId;
 
     @Column(nullable = false, length = 200)
     private String title;

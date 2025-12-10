@@ -3,6 +3,7 @@ package com.example.rental.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -11,6 +12,7 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApiResponseDto<T> {
 
@@ -34,16 +36,39 @@ public class ApiResponseDto<T> {
 
     // ✅ Trả về phản hồi thành công (không có dữ liệu)
     public static <T> ApiResponseDto<T> success(int statusCode, String message) {
+<<<<<<< HEAD
         return new ApiResponseDto<>(statusCode, message, null, null, LocalDateTime.now(), null);
+=======
+        return ApiResponseDto.<T>builder()
+                .statusCode(statusCode)
+                .message(message)
+                .build();
+>>>>>>> ThienTruong
     }
 
     // ✅ Trả về phản hồi thành công (có dữ liệu)
     public static <T> ApiResponseDto<T> success(int statusCode, String message, T data) {
+<<<<<<< HEAD
         return new ApiResponseDto<>(statusCode, message, null, data, LocalDateTime.now(), null);
     }
 
     // ✅ Trả về phản hồi lỗi chi tiết
     public static <T> ApiResponseDto<T> error(int statusCode, String message, String error, String path) {
         return new ApiResponseDto<>(statusCode, message, error, null, LocalDateTime.now(), path);
+=======
+        return ApiResponseDto.<T>builder()
+                .statusCode(statusCode)
+                .message(message)
+                .data(data)
+                .build();
+    }
+
+    public static <T> ApiResponseDto<T> error(int statusCode, String message, String error) {
+        return ApiResponseDto.<T>builder()
+                .statusCode(statusCode)
+                .message(message)
+                .error(error)
+                .build();
+>>>>>>> ThienTruong
     }
 }

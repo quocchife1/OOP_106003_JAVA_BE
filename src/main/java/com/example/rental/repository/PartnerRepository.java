@@ -9,6 +9,8 @@ import java.util.Optional;
 @Repository
 public interface PartnerRepository extends JpaRepository<Partners, Long> {
     
+    Optional<Partners> findById(Long Id);
+
     // Đã có sẵn: Trả về Optional
     Optional<Partners> findByPartnerCode(String partnerCode);
 
