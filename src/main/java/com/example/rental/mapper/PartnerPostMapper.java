@@ -7,10 +7,19 @@ import com.example.rental.entity.Partners;
 
 public class PartnerPostMapper {
 
-    public static PartnerPostResponse toResponse(Long id, String paymentUrl) {
+    public static PartnerPostResponse toResponse(PartnerPost post) {
         return PartnerPostResponse.builder()
-                .postId(id)
-                .paymentUrl(paymentUrl)
+                .id(post.getId())
+                .title(post.getTitle())
+                .description(post.getDescription())
+                .price(post.getPrice())
+                .area(post.getArea())
+                .address(post.getAddress())
+                .postType(post.getPostType())
+                .status(post.getStatus())
+                .partnerId(post.getPartner().getId())
+                .createdAt(post.getCreatedAt())
+                .approvedAt(post.getApprovedAt())
                 .build();
     }
 }

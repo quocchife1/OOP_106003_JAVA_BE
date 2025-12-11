@@ -2,6 +2,7 @@ package com.example.rental.exception;
 
 import com.example.rental.dto.ApiResponseDto;
 import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.lang.Arrays;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +12,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -21,57 +24,57 @@ public class GlobalExceptionHandler {
                 HttpStatus.BAD_REQUEST.value(),
                 "Yêu cầu không hợp lệ",
                 ex.getMessage(),
-                request.getRequestURI()
-        );
+                request.getRequestURI());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
     @ExceptionHandler(UsernameNotFoundException.class)
-    public ResponseEntity<ApiResponseDto<Void>> handleUsernameNotFoundException(UsernameNotFoundException ex, HttpServletRequest request) {
+    public ResponseEntity<ApiResponseDto<Void>> handleUsernameNotFoundException(UsernameNotFoundException ex,
+            HttpServletRequest request) {
         ApiResponseDto<Void> response = ApiResponseDto.error(
                 HttpStatus.UNAUTHORIZED.value(),
                 "Thông tin đăng nhập không hợp lệ",
                 ex.getMessage(),
-                request.getRequestURI()
-        );
+                request.getRequestURI());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ApiResponseDto<Void>> handleAccessDeniedException(AccessDeniedException ex, HttpServletRequest request) {
+    public ResponseEntity<ApiResponseDto<Void>> handleAccessDeniedException(AccessDeniedException ex,
+            HttpServletRequest request) {
         ApiResponseDto<Void> response = ApiResponseDto.error(
                 HttpStatus.FORBIDDEN.value(),
                 "Không có quyền truy cập",
                 ex.getMessage(),
-                request.getRequestURI()
-        );
+                request.getRequestURI());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
     }
 
     @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<ApiResponseDto<Void>> handleBadCredentialsException(BadCredentialsException ex, HttpServletRequest request) {
+    public ResponseEntity<ApiResponseDto<Void>> handleBadCredentialsException(BadCredentialsException ex,
+            HttpServletRequest request) {
         ApiResponseDto<Void> response = ApiResponseDto.error(
                 HttpStatus.UNAUTHORIZED.value(),
                 "Thông tin đăng nhập không hợp lệ",
                 ex.getMessage(),
-                request.getRequestURI()
-        );
+                request.getRequestURI());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
 
     @ExceptionHandler(ExpiredJwtException.class)
-    public ResponseEntity<ApiResponseDto<Void>> handleExpiredJwtException(ExpiredJwtException ex, HttpServletRequest request) {
+    public ResponseEntity<ApiResponseDto<Void>> handleExpiredJwtException(ExpiredJwtException ex,
+            HttpServletRequest request) {
         ApiResponseDto<Void> response = ApiResponseDto.error(
                 HttpStatus.UNAUTHORIZED.value(),
                 "JWT token hết hạn",
                 ex.getMessage(),
-                request.getRequestURI()
-        );
+                request.getRequestURI());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponseDto<Void>> handleValidationException(MethodArgumentNotValidException ex, HttpServletRequest request) {
+    public ResponseEntity<ApiResponseDto<Void>> handleValidationException(MethodArgumentNotValidException ex,
+            HttpServletRequest request) {
         String errorMessage = ex.getBindingResult().getFieldErrors().stream()
                 .findFirst()
                 .map(err -> err.getField() + ": " + err.getDefaultMessage())
@@ -81,8 +84,7 @@ public class GlobalExceptionHandler {
                 HttpStatus.BAD_REQUEST.value(),
                 "Dữ liệu không hợp lệ",
                 errorMessage,
-                request.getRequestURI()
-        );
+                request.getRequestURI());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
@@ -92,8 +94,15 @@ public class GlobalExceptionHandler {
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "Lỗi hệ thống",
                 ex.getMessage(),
-                request.getRequestURI()
-        );
+                request.getRequestURI());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<?> handleEnumError(MethodArgumentTypeMismatchException ex) {
+        return ResponseEntity.badRequest().body(
+                Map.of(
+                        "statusCode", 400,
+                        "message", "Giá trị '" + ex.getValue() + "' không hợp lệ cho trường '" + ex.getName() + "'"));
     }
 }

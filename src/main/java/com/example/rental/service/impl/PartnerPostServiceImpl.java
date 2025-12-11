@@ -37,7 +37,7 @@ public class PartnerPostServiceImpl implements PartnerPostService {
 
     @Override
     @Transactional
-    public PartnerPostResponse createPost(PartnerPostRequest postRequest) {
+    public String createPost(PartnerPostRequest postRequest) {
         Partners partner = partnerRepository.findById(postRequest.getPartnerId())
                 .orElseThrow(() -> new EntityNotFoundException("Partner not found"));
 
@@ -65,22 +65,31 @@ public class PartnerPostServiceImpl implements PartnerPostService {
 
         String paymentUrl = momoService.createATMPayment(amount, orderId).getPayUrl();
 
-        return new PartnerPostResponse(saved.getId(), paymentUrl);
+        return paymentUrl;
     }
 
     @Override
-    public Optional<PartnerPost> findById(Long id) {
-        return partnerPostRepository.findById(id);
+    public Optional<PartnerPostResponse> findById(Long id) {
+        return partnerPostRepository.findById(id)
+            .map(PartnerPostMapper::toResponse);
     }
 
     @Override
-    public List<PartnerPost> findPostsByPartnerId(Long partnerId) {
-        return partnerPostRepository.findByPartnerId(partnerId);
+    public List<PartnerPostResponse> findPostsByPartnerId(Long partnerId) {
+        List<PartnerPost> posts = partnerPostRepository.findByPartnerId(partnerId);
+
+        return posts.stream()
+                .map(PartnerPostMapper::toResponse)
+                .toList();
     }
 
     @Override
-    public List<PartnerPost> findPostsByStatus(PostApprovalStatus status) {
-        return partnerPostRepository.findByStatus(status);
+    public List<PartnerPostResponse> findPostsByStatus(PostApprovalStatus status) {
+        List<PartnerPost> posts = partnerPostRepository.findByStatus(status);
+
+        return posts.stream()
+                .map(PartnerPostMapper::toResponse)
+                .toList();
     }
 
     @Override
@@ -89,8 +98,16 @@ public class PartnerPostServiceImpl implements PartnerPostService {
         PartnerPost post = partnerPostRepository.findById(postId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy tin đăng."));
 
+        if (post.getStatus() == PostApprovalStatus.PENDING_PAYMENT) {
+            throw new IllegalStateException("Bài đăng đang chờ thanh toán, không thể duyệt.");
+        }
+
+        if (post.getStatus() == PostApprovalStatus.APPROVED || post.getStatus() == PostApprovalStatus.REJECTED) {
+            throw new IllegalStateException("Bài đăng đã được duyệt, không thể sửa đổi trạng thái phê duyệt.");
+        }
+
         // ĐÃ SỬA: So sánh với PostApprovalStatus.PENDING
-        if (newStatus == PostApprovalStatus.PENDING_APPROVAL) {
+        if (newStatus == PostApprovalStatus.PENDING_APPROVAL || newStatus == PostApprovalStatus.PENDING_PAYMENT) {
             throw new RuntimeException("Không thể duyệt về trạng thái PENDING.");
         }
 

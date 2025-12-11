@@ -21,6 +21,15 @@ import lombok.NoArgsConstructor;
 @Builder
 @JsonInclude(Include.NON_NULL)
 public class PartnerPostResponse {
-    private Long postId;
-    private String paymentUrl;
+    private Long id;
+    private String title;
+    private String description;
+    private BigDecimal price;
+    private BigDecimal area;
+    private String address;
+    private PostType postType;
+    private PostApprovalStatus status;
+    private Long partnerId;
+    private LocalDateTime createdAt;
+    private LocalDateTime approvedAt;
 }
