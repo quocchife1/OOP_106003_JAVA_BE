@@ -1,0 +1,223 @@
+import React, { useEffect, useState } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import roomApi from '../api/roomApi';
+import reservationApi from '../api/reservationApi';
+import MainLayout from '../components/MainLayout';
+
+export default function RoomDetailPage() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useSelector((state) => state.auth);
+
+  const [room, setRoom] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedImage, setSelectedImage] = useState('');
+  
+  // Modal Booking State
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [bookingLoading, setBookingLoading] = useState(false);
+  
+  // Form Data
+  const [bookingData, setBookingData] = useState({
+    startDate: '',
+    duration: 12, // Mặc định 12 tháng
+    notes: ''
+  });
+
+  useEffect(() => {
+    const fetchRoom = async () => {
+      try {
+        const data = await roomApi.getById(id);
+        setRoom(data);
+        if (data.images && data.images.length > 0) {
+          setSelectedImage(data.images[0].imageUrl);
+        }
+      } catch (error) {
+        console.error("Lỗi tải thông tin phòng:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRoom();
+  }, [id]);
+
+  // Handle click "Đặt phòng"
+  const handleBookClick = () => {
+    if (!user) {
+      if (window.confirm("Bạn cần đăng nhập để đặt giữ chỗ. Chuyển đến trang đăng nhập?")) {
+        navigate('/login');
+      }
+      return;
+    }
+    // Set ngày mặc định là hôm nay
+    const today = new Date().toISOString().split('T')[0];
+    setBookingData(prev => ({ ...prev, startDate: today }));
+    setShowBookingModal(true);
+  };
+
+  // Submit Booking
+  const handleConfirmBooking = async () => {
+    if (!bookingData.startDate) {
+        alert("Vui lòng chọn ngày bắt đầu thuê!");
+        return;
+    }
+
+    setBookingLoading(true);
+    try {
+      // Tính ngày kết thúc
+      const start = new Date(bookingData.startDate);
+      const end = new Date(start);
+      end.setMonth(end.getMonth() + parseInt(bookingData.duration));
+
+      // Payload gửi lên Backend (Format: YYYY-MM-DDTHH:mm:ss)
+      const payload = {
+        roomId: room.id,
+        startDate: `${bookingData.startDate}T08:00:00`,
+        endDate: `${end.toISOString().split('T')[0]}T17:00:00`,
+        notes: bookingData.notes
+      };
+
+      await reservationApi.createReservation(payload);
+      
+      alert("🎉 Đặt giữ chỗ thành công! Bạn có thể xem trạng thái trong trang cá nhân.");
+      setShowBookingModal(false);
+      
+      // Điều hướng thông minh: Nếu là Guest -> Tenant Dashboard (nếu đã có quyền) hoặc trang Profile
+      navigate('/tenant/reservations'); 
+      
+    } catch (error) {
+      console.error(error);
+      const msg = error.response?.data?.message || "Có lỗi xảy ra khi đặt phòng.";
+      alert("❌ " + msg);
+    } finally {
+      setBookingLoading(false);
+    }
+  };
+
+  if (loading) return (
+    <MainLayout>
+       <div className="min-h-[60vh] flex items-center justify-center">
+         <div className="text-gray-400 font-medium animate-pulse">Đang tải dữ liệu...</div>
+       </div>
+    </MainLayout>
+  );
+  
+  if (!room) return (
+    <MainLayout>
+       <div className="min-h-[60vh] flex items-center justify-center">
+         <div className="text-gray-900 font-bold text-xl">Không tìm thấy thông tin phòng!</div>
+       </div>
+    </MainLayout>
+  );
+
+  return (
+    <MainLayout>
+      <div className="container mx-auto px-6 py-10 relative">
+        {/* Breadcrumb */}
+        <div className="flex items-center text-sm font-medium text-gray-400 mb-8">
+            <Link to="/" className="hover:text-indigo-600 transition-colors">Trang chủ</Link>
+            <span className="mx-3">/</span>
+            <span className="text-gray-900">Chi tiết phòng {room.roomNumber}</span>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+          {/* Cột trái: Hình ảnh & Mô tả */}
+          <div className="lg:col-span-8 space-y-6">
+            <div className="bg-gray-100 rounded-3xl overflow-hidden h-[500px] shadow-sm relative group">
+              <img src={selectedImage || 'https://placehold.co/1200x800?text=No+Image'} alt="Main View" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"/>
+            </div>
+            {room.images && room.images.length > 0 && (
+              <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+                {room.images.map((img) => (
+                  <button key={img.id} onClick={() => setSelectedImage(img.imageUrl)} className={`relative w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 transition-all duration-200 border-2 ${selectedImage === img.imageUrl ? 'border-indigo-600 opacity-100 scale-105' : 'border-transparent opacity-70 hover:opacity-100'}`}>
+                    <img src={img.imageUrl} alt="Thumbnail" className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
+              <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2"><span>📝</span> Mô tả chi tiết</h3>
+              <div className="prose max-w-none text-gray-600 leading-relaxed whitespace-pre-line">{room.description || 'Chưa có mô tả chi tiết.'}</div>
+            </div>
+          </div>
+
+          {/* Cột phải: Thông tin & Nút đặt */}
+          <div className="lg:col-span-4">
+            <div className="sticky top-24 bg-white rounded-3xl p-8 shadow-xl shadow-indigo-100/50 border border-gray-100">
+                <div className="flex justify-between items-start mb-2">
+                  <p className="text-sm font-bold text-indigo-500 uppercase tracking-wider bg-indigo-50 px-2 py-1 rounded-md">{room.branchCode}</p>
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide flex items-center gap-1 ${room.status === 'AVAILABLE' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                    {room.status === 'AVAILABLE' ? (<><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Còn trống</>) : 'Đã thuê'}
+                  </span>
+                </div>
+                <h1 className="text-3xl font-extrabold text-gray-900 mb-6 mt-4">Phòng {room.roomNumber}</h1>
+                <div className="flex items-baseline gap-1 mb-8 pb-8 border-b border-gray-100">
+                  <span className="text-4xl font-extrabold text-indigo-600">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(room.price)}</span>
+                  <span className="text-gray-400 font-medium">/ tháng</span>
+                </div>
+                <div className="space-y-4 mb-8">
+                   <div className="flex justify-between items-center p-3 bg-gray-50 rounded-xl"><span className="text-gray-500 text-sm">Diện tích</span><span className="font-bold text-gray-900">{room.area} m²</span></div>
+                   <div className="flex justify-between items-center p-3 bg-gray-50 rounded-xl"><span className="text-gray-500 text-sm">Loại phòng</span><span className="font-bold text-gray-900">Standard</span></div>
+                   <div className="flex justify-between items-center p-3 bg-gray-50 rounded-xl"><span className="text-gray-500 text-sm">Đặt cọc</span><span className="font-bold text-gray-900">1 tháng</span></div>
+                </div>
+                
+                <button 
+                  disabled={room.status !== 'AVAILABLE'}
+                  className={`w-full py-4 rounded-2xl font-bold text-lg transition-all duration-200 shadow-lg transform active:scale-[0.98] ${room.status === 'AVAILABLE' ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
+                  onClick={handleBookClick}
+                >
+                  {room.status === 'AVAILABLE' ? 'Đặt Giữ Chỗ Ngay 📅' : 'Đã Được Thuê 🔒'}
+                </button>
+            </div>
+          </div>
+        </div>
+
+        {/* --- MODAL XÁC NHẬN ĐẶT PHÒNG --- */}
+        {showBookingModal && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl animate-fade-in-up">
+                    <h3 className="text-xl font-bold text-gray-900 mb-4 border-b pb-2">Xác nhận giữ chỗ</h3>
+                    
+                    <div className="space-y-4 mb-6 text-sm text-gray-600">
+                        <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                            <div className="flex justify-between mb-1"><span>Phòng:</span><span className="font-bold text-gray-900">{room.roomNumber} ({room.branchCode})</span></div>
+                            <div className="flex justify-between"><span>Giá thuê:</span><span className="font-medium text-indigo-600">{room.price.toLocaleString()} đ/tháng</span></div>
+                        </div>
+
+                        {/* Ngày bắt đầu */}
+                        <div>
+                            <label className="block text-gray-700 font-medium mb-1">Ngày bắt đầu thuê (*)</label>
+                            <input type="date" required className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none" value={bookingData.startDate} onChange={(e) => setBookingData({...bookingData, startDate: e.target.value})} />
+                        </div>
+
+                        {/* Thời hạn thuê */}
+                        <div>
+                            <label className="block text-gray-700 font-medium mb-1">Thời gian thuê</label>
+                            <select className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none" value={bookingData.duration} onChange={(e) => setBookingData({...bookingData, duration: e.target.value})}>
+                                <option value="6">6 Tháng</option>
+                                <option value="12">12 Tháng (1 Năm)</option>
+                                <option value="24">24 Tháng (2 Năm)</option>
+                            </select>
+                        </div>
+
+                        {/* Ghi chú */}
+                        <div>
+                            <label className="block text-gray-700 font-medium mb-1">Ghi chú (Tùy chọn)</label>
+                            <textarea rows="2" className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Ví dụ: Tôi muốn dọn vào cuối tuần..." value={bookingData.notes} onChange={(e) => setBookingData({...bookingData, notes: e.target.value})}></textarea>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-3">
+                        <button onClick={() => setShowBookingModal(false)} className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">Hủy</button>
+                        <button onClick={handleConfirmBooking} disabled={bookingLoading} className="flex-1 px-4 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200 disabled:opacity-50 flex justify-center items-center">
+                            {bookingLoading ? <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span> : "Gửi yêu cầu"}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+      </div>
+    </MainLayout>
+  );
+}
