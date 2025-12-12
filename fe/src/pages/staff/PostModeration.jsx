@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import partnerApi from '../../api/partnerApi';
+import staffApi from '../../api/staffApi';
 
 export default function PostModeration(){
   const [posts, setPosts] = useState([]);
@@ -17,7 +17,10 @@ export default function PostModeration(){
   const fetchPosts = async ()=>{
     setLoading(true);
     try{
-      const res = await partnerApi.getManagementPosts?.({ status, q, page, size: 12 });
+      const isPending = String(status).toUpperCase().startsWith('PENDING');
+      const res = isPending
+        ? await staffApi.getPendingPosts({ page, size: 12 })
+        : await staffApi.getManagementPosts({ status, q, page, size: 12 });
       const payload = res?.data?.result || res?.data || {};
       const content = Array.isArray(payload)? payload : (payload.content || []);
       setPosts(content);
@@ -32,7 +35,7 @@ export default function PostModeration(){
   useEffect(()=>{
     const fetchStats = async ()=>{
       try{
-        const res = await partnerApi.getModerationStats?.();
+        const res = await staffApi.getModerationStats?.();
         const data = res?.data?.result || res?.data || {};
         setStats({
           pending: data.pending || 0,
@@ -43,21 +46,23 @@ export default function PostModeration(){
       }catch(e){ /* ignore */ }
     };
     fetchStats();
-  },[]);
+  },[status,q,page]);
 
   const approve = async (id)=>{
     try{
-      await partnerApi.approvePost?.(id);
-      // After action, refetch to reflect current filter
+      await staffApi.approvePost?.(id);
+      // After action, refetch posts and stats
       await fetchPosts();
+      try { const s = await staffApi.getModerationStats?.(); const data = s?.data?.result || s?.data || {}; setStats({ pending: data.pending||0, approved: data.approved||0, rejected: data.rejected||0, approvedToday: data.approvedToday||0 }); } catch {}
       setSelected(null);
     }catch(e){ alert('Không thể duyệt tin'); }
   };
   const reject = async (id)=>{
     const reason = rejectReason || prompt('Nhập lý do từ chối:');
     try{
-      await partnerApi.rejectPost?.(id, reason);
+      await staffApi.rejectPost?.(id, reason);
       await fetchPosts();
+      try { const s = await staffApi.getModerationStats?.(); const data = s?.data?.result || s?.data || {}; setStats({ pending: data.pending||0, approved: data.approved||0, rejected: data.rejected||0, approvedToday: data.approvedToday||0 }); } catch {}
       setSelected(null);
     }catch(e){ alert('Không thể từ chối'); }
   };
@@ -66,7 +71,7 @@ export default function PostModeration(){
     setDetailLoading(true);
     setRejectReason('');
     try{
-      const res = await partnerApi.getManagementPostById(id);
+      const res = await staffApi.getManagementPostById(id);
       const data = res?.data?.result || res?.data || res;
       setSelected(data);
     }catch(e){ console.error('Không tải được chi tiết', e); }
@@ -122,13 +127,13 @@ export default function PostModeration(){
               <>
                 {status==='PENDING_APPROVAL' && (
                   <button className="px-4 py-2 rounded bg-emerald-600 text-white" onClick={async()=>{
-                    try{ await partnerApi.approvePostsBatch(selectedIds); setSelectedIds([]); await fetchPosts(); }catch(e){ alert('Không thể duyệt hàng loạt'); }
+                    try{ await staffApi.approvePostsBatch(selectedIds); setSelectedIds([]); await fetchPosts(); try { const s = await staffApi.getModerationStats?.(); const data = s?.data?.result || s?.data || {}; setStats({ pending: data.pending||0, approved: data.approved||0, rejected: data.rejected||0, approvedToday: data.approvedToday||0 }); } catch {} }catch(e){ alert('Không thể duyệt hàng loạt'); }
                   }}>Duyệt hàng loạt ({selectedIds.length})</button>
                 )}
                 {status!=='APPROVED' && (
                   <button className="px-4 py-2 rounded bg-red-600 text-white" onClick={async()=>{
                     const reason = prompt('Lý do từ chối hàng loạt:') || '';
-                    try{ await partnerApi.rejectPostsBatch(selectedIds, reason); setSelectedIds([]); await fetchPosts(); }catch(e){ alert('Không thể từ chối hàng loạt'); }
+                    try{ await staffApi.rejectPostsBatch(selectedIds, reason); setSelectedIds([]); await fetchPosts(); try { const s = await staffApi.getModerationStats?.(); const data = s?.data?.result || s?.data || {}; setStats({ pending: data.pending||0, approved: data.approved||0, rejected: data.rejected||0, approvedToday: data.approvedToday||0 }); } catch {} }catch(e){ alert('Không thể từ chối hàng loạt'); }
                   }}>Từ chối hàng loạt ({selectedIds.length})</button>
                 )}
               </>

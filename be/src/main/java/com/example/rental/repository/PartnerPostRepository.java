@@ -5,6 +5,8 @@ import com.example.rental.entity.PostApprovalStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -25,6 +27,22 @@ public interface PartnerPostRepository extends JpaRepository<PartnerPost, Long> 
 
     // Phân trang theo tập trạng thái + tìm theo tiêu đề (contains, ignore case), loại bỏ bản ghi đã xóa
     Page<PartnerPost> findByStatusInAndTitleContainingIgnoreCaseAndIsDeletedFalse(List<PostApprovalStatus> statuses, String title, Pageable pageable);
+
+    // Query with JOIN FETCH to eagerly load partner and approvedBy
+    @Query(
+        value = "SELECT p FROM PartnerPost p LEFT JOIN FETCH p.partner LEFT JOIN FETCH p.approvedBy WHERE p.status IN :statuses AND LOWER(p.title) LIKE LOWER(CONCAT('%', :title, '%')) AND p.isDeleted = false",
+        countQuery = "SELECT COUNT(p) FROM PartnerPost p WHERE p.status IN :statuses AND LOWER(p.title) LIKE LOWER(CONCAT('%', :title, '%')) AND p.isDeleted = false"
+    )
+    Page<PartnerPost> findWithPartnerAndApprovedBy(@Param("statuses") List<PostApprovalStatus> statuses, @Param("title") String title, Pageable pageable);
+
+        // Projection-based paging for moderation list
+            @Query(
+                value = "SELECT new com.example.rental.dto.partnerpost.PartnerPostListItem(p.id, p.title, p.description, p.price, p.area, p.address, p.postType, p.status, p.createdAt, p.approvedAt, (CASE WHEN ab.fullName IS NOT NULL THEN ab.fullName ELSE NULL END), pr.id, pr.companyName, pr.phoneNumber, p.rejectReason) " +
+                    "FROM PartnerPost p LEFT JOIN p.approvedBy ab LEFT JOIN p.partner pr " +
+                    "WHERE p.isDeleted = false AND p.status IN :statuses AND LOWER(p.title) LIKE LOWER(CONCAT('%', :title, '%'))",
+                countQuery = "SELECT COUNT(p) FROM PartnerPost p WHERE p.isDeleted = false AND p.status IN :statuses AND LOWER(p.title) LIKE LOWER(CONCAT('%', :title, '%'))"
+            )
+            Page<com.example.rental.dto.partnerpost.PartnerPostListItem> pageListItems(@Param("statuses") List<PostApprovalStatus> statuses, @Param("title") String title, Pageable pageable);
 
     // Counters for stats
     long countByStatusAndIsDeletedFalse(PostApprovalStatus status);

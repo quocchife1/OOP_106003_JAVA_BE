@@ -2,15 +2,22 @@ package com.example.rental.controller;
 
 import com.example.rental.dto.ApiResponseDto;
 import com.example.rental.dto.partnerpost.PartnerPostResponse;
+import com.example.rental.dto.partnerpost.PartnerPostListItem;
 import com.example.rental.entity.PartnerPost;
 import com.example.rental.entity.PostImage;
 import com.example.rental.repository.PartnerPostRepository;
+import com.example.rental.repository.EmployeeRepository;
 import com.example.rental.repository.PostImageRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -23,45 +30,68 @@ import java.util.stream.Collectors;
 public class ManagementPartnerPostController {
 
     private final PartnerPostRepository partnerPostRepository;
+    private final EmployeeRepository employeeRepository;
     private final PostImageRepository postImageRepository;
 
     public ManagementPartnerPostController(PartnerPostRepository partnerPostRepository,
+                                           EmployeeRepository employeeRepository,
                                            PostImageRepository postImageRepository) {
         this.partnerPostRepository = partnerPostRepository;
+        this.employeeRepository = employeeRepository;
         this.postImageRepository = postImageRepository;
     }
 
     @GetMapping("")
     @PreAuthorize("hasAnyRole('ADMIN','EMPLOYEE','RECEPTIONIST')")
-    public ResponseEntity<ApiResponseDto<Page<PartnerPostResponse>>> list(
+    @Transactional(readOnly = true)
+        public ResponseEntity<ApiResponseDto<Page<PartnerPostResponse>>> list(
             @RequestParam(required = false) String status,
             @RequestParam(required = false, defaultValue = "") String q,
-            Pageable pageable
-    ) {
-        java.util.List<com.example.rental.entity.PostApprovalStatus> statuses;
-        if (status == null || status.isBlank()) {
-            statuses = java.util.Arrays.asList(
-                    com.example.rental.entity.PostApprovalStatus.PENDING_APPROVAL,
-                    com.example.rental.entity.PostApprovalStatus.APPROVED,
-                    com.example.rental.entity.PostApprovalStatus.REJECTED
-            );
-        } else {
-            // Accept PENDING/PENDING_APPROVAL, APPROVED, REJECTED
-            String norm = status.trim().toUpperCase();
-            if ("PENDING".equals(norm)) norm = "PENDING_APPROVAL";
-            com.example.rental.entity.PostApprovalStatus st = com.example.rental.entity.PostApprovalStatus.valueOf(norm);
-            statuses = java.util.List.of(st);
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size
+        ) {
+        List<com.example.rental.entity.PostApprovalStatus> statuses = normalizeStatuses(status);
+        String keyword = q == null ? "" : q.trim();
+        Pageable pageable = PageRequest.of(Math.max(page, 0), Math.max(size, 1), Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<PartnerPostListItem> result = partnerPostRepository
+            .pageListItems(statuses, keyword, pageable);
+        Page<PartnerPostResponse> resp = result.map(item -> PartnerPostResponse.builder()
+            .id(item.getId())
+            .title(item.getTitle())
+            .description(item.getDescription())
+            .price(item.getPrice())
+            .area(item.getArea())
+            .address(item.getAddress())
+            .postType(item.getPostType())
+            .status(item.getStatus())
+            .createdAt(item.getCreatedAt())
+            .approvedAt(item.getApprovedAt())
+            .approvedByName(item.getApprovedByName())
+            .partnerId(item.getPartnerId())
+            .partnerName(item.getPartnerName())
+            .partnerPhone(item.getPartnerPhone())
+            .imageUrls(java.util.List.of())
+            .rejectReason(item.getRejectReason())
+            .build());
+        return ResponseEntity.ok(ApiResponseDto.success(200, "Danh sách tin theo bộ lọc", resp));
         }
 
-        String keyword = q == null ? "" : q.trim();
-        Page<PartnerPost> page = partnerPostRepository
-                .findByStatusInAndTitleContainingIgnoreCaseAndIsDeletedFalse(statuses, keyword, pageable);
-        Page<PartnerPostResponse> resp = page.map(this::mapToResponse);
-        return ResponseEntity.ok(ApiResponseDto.success(200, "Danh sách tin theo bộ lọc", resp));
-    }
+        private List<com.example.rental.entity.PostApprovalStatus> normalizeStatuses(String raw) {
+            if (raw == null || raw.isBlank()) {
+                return java.util.Arrays.asList(
+                        com.example.rental.entity.PostApprovalStatus.PENDING_APPROVAL,
+                        com.example.rental.entity.PostApprovalStatus.APPROVED,
+                        com.example.rental.entity.PostApprovalStatus.REJECTED
+                );
+            }
+            String norm = raw.trim().toUpperCase();
+            if ("PENDING".equals(norm)) norm = "PENDING_APPROVAL";
+            return java.util.List.of(com.example.rental.entity.PostApprovalStatus.valueOf(norm));
+        }
 
     @GetMapping("/pending")
     @PreAuthorize("hasAnyRole('ADMIN','EMPLOYEE','RECEPTIONIST')")
+    @Transactional(readOnly = true)
     public ResponseEntity<ApiResponseDto<Page<PartnerPostResponse>>> listPending(Pageable pageable) {
         Page<PartnerPost> page = partnerPostRepository.findByStatusInAndIsDeletedFalse(java.util.List.of(com.example.rental.entity.PostApprovalStatus.PENDING_APPROVAL), pageable);
         Page<PartnerPostResponse> resp = page.map(this::mapToResponse);
@@ -81,6 +111,14 @@ public class ManagementPartnerPostController {
         PartnerPost post = partnerPostRepository.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy tin"));
         post.setStatus(com.example.rental.entity.PostApprovalStatus.APPROVED);
         post.setApprovedAt(java.time.LocalDateTime.now());
+        // set approvedBy from current authenticated employee if available
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String username = auth != null ? auth.getName() : null;
+            if (username != null && username.trim().length() > 0) {
+                employeeRepository.findByUsername(username).ifPresent(post::setApprovedBy);
+            }
+        } catch (Exception ignored) {}
         partnerPostRepository.save(post);
         return ResponseEntity.ok(ApiResponseDto.success(200, "Đã duyệt tin", null));
     }
@@ -91,6 +129,13 @@ public class ManagementPartnerPostController {
         PartnerPost post = partnerPostRepository.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy tin"));
         post.setStatus(com.example.rental.entity.PostApprovalStatus.REJECTED);
         post.setRejectReason(reason);
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String username = auth != null ? auth.getName() : null;
+            if (username != null && username.trim().length() > 0) {
+                employeeRepository.findByUsername(username).ifPresent(post::setApprovedBy);
+            }
+        } catch (Exception ignored) {}
         partnerPostRepository.save(post);
         return ResponseEntity.ok(ApiResponseDto.success(200, "Đã từ chối tin", null));
     }
@@ -118,6 +163,23 @@ public class ManagementPartnerPostController {
                 .rejectReason(post.getRejectReason())
                 .imageUrls(imageUrls)
                 .build();
+    }
+
+    // Additional fields for response
+    private void enrichResponse(PartnerPostResponse resp, PartnerPost post) {
+        resp.setCreatedAt(post.getCreatedAt());
+        resp.setRejectReason(post.getRejectReason());
+        if (post.getApprovedAt() != null) {
+            resp.setApprovedAt(post.getApprovedAt());
+        }
+        if (post.getApprovedBy() != null) {
+            resp.setApprovedByName(post.getApprovedBy().getFullName());
+        }
+        if (post.getPartner() != null) {
+            resp.setPartnerName(post.getPartner().getCompanyName());
+            resp.setPartnerPhone(post.getPartner().getPhoneNumber());
+            resp.setPartnerId(post.getPartner().getId());
+        }
     }
 
     // ===== Bulk operations =====
