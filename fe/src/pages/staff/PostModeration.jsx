@@ -9,17 +9,41 @@ export default function PostModeration(){
   const [rejectReason, setRejectReason] = useState('');
   const [status, setStatus] = useState('PENDING_APPROVAL');
   const [q, setQ] = useState('');
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [stats, setStats] = useState({ pending: 0, approved: 0, rejected: 0, approvedToday: 0 });
 
   const fetchPosts = async ()=>{
     setLoading(true);
     try{
-      const res = await partnerApi.getManagementPosts?.({ status, q, page: 0, size: 12 });
-      const data = res?.data?.result || res?.data || [];
-      setPosts(Array.isArray(data)? data : (data.content || []));
+      const res = await partnerApi.getManagementPosts?.({ status, q, page, size: 12 });
+      const payload = res?.data?.result || res?.data || {};
+      const content = Array.isArray(payload)? payload : (payload.content || []);
+      setPosts(content);
+      const tp = typeof payload.totalPages === 'number' ? payload.totalPages : 0;
+      setTotalPages(tp);
     }catch(e){ console.error('Lỗi tải tin chờ duyệt', e); setPosts([]); }
     finally{ setLoading(false); }
   };
-  useEffect(()=>{ fetchPosts(); },[status]);
+  useEffect(()=>{ setPage(0); },[status,q]);
+  useEffect(()=>{ fetchPosts(); },[status,page]);
+
+  useEffect(()=>{
+    const fetchStats = async ()=>{
+      try{
+        const res = await partnerApi.getModerationStats?.();
+        const data = res?.data?.result || res?.data || {};
+        setStats({
+          pending: data.pending || 0,
+          approved: data.approved || 0,
+          rejected: data.rejected || 0,
+          approvedToday: data.approvedToday || 0
+        });
+      }catch(e){ /* ignore */ }
+    };
+    fetchStats();
+  },[]);
 
   const approve = async (id)=>{
     try{
@@ -52,6 +76,24 @@ export default function PostModeration(){
   return (
       <div className="container mx-auto px-6 py-8">
         <h1 className="text-2xl font-bold mb-6">Duyệt tin đối tác</h1>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+          <div className="bg-white border rounded-xl p-3 text-sm">
+            <div className="text-gray-500">Chờ duyệt</div>
+            <div className="text-xl font-semibold text-yellow-700">{stats.pending}</div>
+          </div>
+          <div className="bg-white border rounded-xl p-3 text-sm">
+            <div className="text-gray-500">Đã duyệt</div>
+            <div className="text-xl font-semibold text-emerald-700">{stats.approved}</div>
+          </div>
+          <div className="bg-white border rounded-xl p-3 text-sm">
+            <div className="text-gray-500">Từ chối</div>
+            <div className="text-xl font-semibold text-red-700">{stats.rejected}</div>
+          </div>
+          <div className="bg-white border rounded-xl p-3 text-sm">
+            <div className="text-gray-500">Duyệt hôm nay</div>
+            <div className="text-xl font-semibold text-indigo-700">{stats.approvedToday}</div>
+          </div>
+        </div>
         <div className="flex flex-col md:flex-row md:items-center gap-3 mb-6">
           <div className="inline-flex rounded-lg border overflow-hidden">
             {[
@@ -76,25 +118,77 @@ export default function PostModeration(){
               className="w-full md:w-64 border rounded-lg px-3 py-2"
             />
             <button className="px-4 py-2 rounded bg-gray-800 text-white" onClick={fetchPosts}>Tìm</button>
+            {(status==='PENDING_APPROVAL' || status==='REJECTED') && selectedIds.length>0 && (
+              <>
+                {status==='PENDING_APPROVAL' && (
+                  <button className="px-4 py-2 rounded bg-emerald-600 text-white" onClick={async()=>{
+                    try{ await partnerApi.approvePostsBatch(selectedIds); setSelectedIds([]); await fetchPosts(); }catch(e){ alert('Không thể duyệt hàng loạt'); }
+                  }}>Duyệt hàng loạt ({selectedIds.length})</button>
+                )}
+                {status!=='APPROVED' && (
+                  <button className="px-4 py-2 rounded bg-red-600 text-white" onClick={async()=>{
+                    const reason = prompt('Lý do từ chối hàng loạt:') || '';
+                    try{ await partnerApi.rejectPostsBatch(selectedIds, reason); setSelectedIds([]); await fetchPosts(); }catch(e){ alert('Không thể từ chối hàng loạt'); }
+                  }}>Từ chối hàng loạt ({selectedIds.length})</button>
+                )}
+              </>
+            )}
           </div>
         </div>
-        {loading? <div>Tải dữ liệu...</div> : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {posts.map(post=> (
-              <div key={post.id} className="bg-white rounded-xl border p-4 shadow-sm">
-                <h3 className="font-semibold mb-1 line-clamp-2">{post.title}</h3>
-                <p className="text-sm text-gray-600 mb-2 line-clamp-3">{post.description}</p>
-                <div className="flex justify-between items-center">
-                  <span className="text-indigo-600 font-bold">{new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND'}).format(post.price)}</span>
-                  <div className="flex gap-2">
-                    <button className="px-3 py-1 rounded bg-gray-200" onClick={()=>openDetail(post.id)}>Xem</button>
-                    <button className="px-3 py-1 rounded bg-green-600 text-white" onClick={()=>approve(post.id)}>Duyệt</button>
-                    <button className="px-3 py-1 rounded bg-red-600 text-white" onClick={()=>reject(post.id)}>Từ chối</button>
+        {loading? (
+          <div>Tải dữ liệu...</div>
+        ) : posts.length===0 ? (
+          <div className="bg-white border rounded-xl p-6 text-center text-gray-600">Không có bản ghi phù hợp bộ lọc.</div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {posts.map(post=> (
+                <div key={post.id} className="bg-white rounded-xl border p-4 shadow-sm">
+                  <div className="flex items-center gap-2 mb-2">
+                    <input type="checkbox" checked={selectedIds.includes(post.id)} onChange={(e)=>{
+                      const checked = e.target.checked;
+                      setSelectedIds(prev=> checked? [...new Set([...prev, post.id])]: prev.filter(id=> id!==post.id));
+                    }} />
+                    <span className="text-xs text-gray-500">Chọn</span>
+                  </div>
+                  <div className="flex justify-between items-start">
+                    <h3 className="font-semibold mb-1 line-clamp-2">{post.title}</h3>
+                    <span className={`text-xs px-2 py-1 rounded ${post.status==='APPROVED'?'bg-emerald-100 text-emerald-700':post.status==='REJECTED'?'bg-red-100 text-red-700':'bg-yellow-100 text-yellow-700'}`}>{post.status}</span>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-2 line-clamp-3">{post.description}</p>
+                  <div className="text-xs text-gray-500 mb-2">Đối tác: {post.partnerName} • SĐT: {post.partnerPhone || '—'}</div>
+                  <div className="text-xs text-gray-500 mb-3">
+                    Tạo: {post.createdAt? new Date(post.createdAt).toLocaleString('vi-VN'): '—'} {post.approvedAt? `• Duyệt: ${new Date(post.approvedAt).toLocaleString('vi-VN')}`:''}
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-indigo-600 font-bold">{new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND'}).format(post.price)}</span>
+                    <div className="flex gap-2">
+                      <button className="px-3 py-1 rounded bg-gray-200" onClick={()=>openDetail(post.id)}>Xem</button>
+                      {status!=='APPROVED' && (
+                        <button className="px-3 py-1 rounded bg-green-600 text-white" onClick={()=>approve(post.id)}>Duyệt</button>
+                      )}
+                      {status!=='REJECTED' && (
+                        <button className="px-3 py-1 rounded bg-red-600 text-white" onClick={()=>reject(post.id)}>Từ chối</button>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+            <div className="flex items-center justify-end gap-2 mt-6">
+              <button
+                className="px-3 py-1 rounded border"
+                disabled={page<=0}
+                onClick={()=> setPage(p=> Math.max(0, p-1))}
+              >Trang trước</button>
+              <span className="text-sm text-gray-600">Trang {page+1}/{Math.max(1,totalPages||1)}</span>
+              <button
+                className="px-3 py-1 rounded border"
+                disabled={totalPages===0 || page>=totalPages-1}
+                onClick={()=> setPage(p=> p+1)}
+              >Trang sau</button>
+            </div>
+          </>
         )}
 
         {selected && (

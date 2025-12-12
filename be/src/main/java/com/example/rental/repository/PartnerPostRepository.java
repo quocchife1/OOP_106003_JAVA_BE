@@ -25,4 +25,9 @@ public interface PartnerPostRepository extends JpaRepository<PartnerPost, Long> 
 
     // Phân trang theo tập trạng thái + tìm theo tiêu đề (contains, ignore case), loại bỏ bản ghi đã xóa
     Page<PartnerPost> findByStatusInAndTitleContainingIgnoreCaseAndIsDeletedFalse(List<PostApprovalStatus> statuses, String title, Pageable pageable);
+
+    // Counters for stats
+    long countByStatusAndIsDeletedFalse(PostApprovalStatus status);
+    long countByStatusInAndIsDeletedFalse(List<PostApprovalStatus> statuses);
+    long countByApprovedAtBetweenAndIsDeletedFalse(java.time.LocalDateTime start, java.time.LocalDateTime end);
 }

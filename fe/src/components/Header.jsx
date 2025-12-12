@@ -98,8 +98,8 @@ export default function Header() {
                       <span>👤</span> Hồ sơ cá nhân
                     </Link>
 
-                    {/* --- MENU QUẢN LÝ (ADMIN/MANAGER) --- */}
-                    {['ADMIN', 'EMPLOYEE', 'MANAGER'].includes(user.role) && (
+                    {/* --- MENU QUẢN LÝ (ADMIN/EMPLOYEE/MANAGER/RECEPTIONIST) --- */}
+                    {['ADMIN', 'EMPLOYEE', 'MANAGER', 'RECEPTIONIST'].includes(user.role) && (
                       <>
                         <Link
                           to="/staff/rooms"

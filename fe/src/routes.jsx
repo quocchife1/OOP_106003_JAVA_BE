@@ -153,7 +153,7 @@ const appRoutes = [
   {
     path: '/staff',
     element: (
-      <ProtectedRoute allowedRoles={['EMPLOYEE','ADMIN']}> 
+      <ProtectedRoute allowedRoles={['EMPLOYEE','ADMIN','RECEPTIONIST']}> 
         <MainLayout>
           <div className="min-h-[60vh]">
             <Outlet />
