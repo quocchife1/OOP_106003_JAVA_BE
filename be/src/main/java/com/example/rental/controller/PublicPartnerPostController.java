@@ -42,6 +42,11 @@ public class PublicPartnerPostController {
         if (post.isDeleted()) {
             throw new com.example.rental.exception.ResourceNotFoundException("PartnerPost", "id", id);
         }
+
+        // Increment views count (direct save to avoid changing status)
+        post.setViews(post.getViews() == null ? 1 : post.getViews() + 1);
+        partnerPostService.savePost(post);
+
         PartnerPostResponse response = mapToResponse(post);
         return ResponseEntity.ok(ApiResponseDto.success(200, "Lấy chi tiết tin hiển thị thành công", response));
     }
@@ -65,8 +70,9 @@ public class PublicPartnerPostController {
                 .approvedByName(post.getApprovedBy() != null ? post.getApprovedBy().getFullName() : null)
                 .partnerId(post.getPartner().getId())
                 .partnerName(post.getPartner().getCompanyName())
-            .partnerPhone(post.getPartner().getPhoneNumber())
-            .rejectReason(post.getRejectReason())
+                .partnerPhone(post.getPartner().getPhoneNumber())
+                .rejectReason(post.getRejectReason())
+                .views(post.getViews())
                 .imageUrls(imageUrls)
                 .build();
     }

@@ -27,6 +27,12 @@ public class PartnerPost {
     @JoinColumn(name = "partner_id", nullable = false)
     private Partners partner;
 
+    @Column(name = "order_id", unique = true)
+    private String orderId;
+
+    @Column(name = "payment_url", length = 512)
+    private String paymentUrl;
+
     @Column(nullable = false, length = 200)
     private String title;
 
@@ -45,7 +51,7 @@ public class PartnerPost {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "post_type", nullable = false, length = 20)
-    private PostType postType; // Sử dụng Enum PostType (NORMAL/PRIORITY)
+    private PostType postType; // Sử dụng Enum PostType (NORMAL/VIP1/VIP2/VIP3)
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -68,4 +74,7 @@ public class PartnerPost {
 
     @Column(name = "reject_reason", length = 500)
     private String rejectReason;
+
+    @Column(name = "views", nullable = false)
+    private Integer views = 0;
 }

@@ -27,7 +27,7 @@ public class PartnerPostServiceImpl implements PartnerPostService {
     @Transactional
     public PartnerPost createPost(PartnerPost post) {
         // ĐÃ SỬA: Sử dụng PostApprovalStatus.PENDING
-        post.setStatus(PostApprovalStatus.PENDING_APPROVAL);
+        post.setStatus(PostApprovalStatus.PENDING_PAYMENT);
         return partnerPostRepository.save(post);
     }
 
@@ -62,10 +62,10 @@ public class PartnerPostServiceImpl implements PartnerPostService {
     public PartnerPost approvePost(Long postId, Long approvedByEmployeeId, PostApprovalStatus newStatus) {
         PartnerPost post = partnerPostRepository.findById(postId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy tin đăng."));
-        
+
         // ĐÃ SỬA: So sánh với PostApprovalStatus.PENDING
         if (newStatus == PostApprovalStatus.PENDING_APPROVAL) {
-             throw new RuntimeException("Không thể duyệt về trạng thái PENDING.");
+            throw new RuntimeException("Không thể duyệt về trạng thái PENDING.");
         }
 
         Employees approver = employeeRepository.findById(approvedByEmployeeId)
@@ -74,17 +74,27 @@ public class PartnerPostServiceImpl implements PartnerPostService {
         post.setStatus(newStatus);
         post.setApprovedBy(approver);
         post.setApprovedAt(LocalDateTime.now());
-        
+
         return partnerPostRepository.save(post);
     }
 
     @Override
     @Transactional
     public PartnerPost updatePost(PartnerPost post) {
-        // Reset trạng thái về PENDING_APPROVAL khi chỉnh sửa
-        post.setStatus(PostApprovalStatus.PENDING_APPROVAL);
+        // Giữ nguyên trạng thái nếu đang chờ thanh toán;
+        // chỉ reset về PENDING_APPROVAL khi không ở trạng thái PENDING_PAYMENT
+        if (post.getStatus() != PostApprovalStatus.PENDING_PAYMENT) {
+            post.setStatus(PostApprovalStatus.PENDING_APPROVAL);
+        }
         post.setApprovedBy(null);
         post.setApprovedAt(null);
+        return partnerPostRepository.save(post);
+    }
+
+    @Override
+    @Transactional
+    public PartnerPost savePost(PartnerPost post) {
+        // Lưu trực tiếp không thay đổi status, dùng cho update views
         return partnerPostRepository.save(post);
     }
 

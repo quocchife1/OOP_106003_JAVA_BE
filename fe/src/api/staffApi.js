@@ -4,9 +4,6 @@ const staffApi = {
   // --- Moderation: Partner Posts ---
   getManagementPosts: ({ status, q = '', page = 0, size = 12 } = {}) => {
     const params = { q, page, size };
-    if (status && String(status).toUpperCase().startsWith('PENDING')) {
-      return axiosClient.get('/api/management/partner-posts/pending', { params: { page, size } });
-    }
     if (status) params.status = status;
     return axiosClient.get('/api/management/partner-posts', { params });
   },

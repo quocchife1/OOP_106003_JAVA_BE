@@ -32,6 +32,9 @@ public interface PartnerPostService {
     // Đối tác cập nhật tin đăng (reset về PENDING_APPROVAL)
     PartnerPost updatePost(PartnerPost post);
 
+    // Lưu trực tiếp không thay đổi status (dùng cho increment views)
+    PartnerPost savePost(PartnerPost post);
+
     // Đối tác xóa tin đăng
     void deletePost(Long id);
 }

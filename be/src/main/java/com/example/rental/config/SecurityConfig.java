@@ -32,25 +32,27 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // --- 1. API CÔNG KHAI (Không cần Token) ---
                         .requestMatchers(
-                                "/api/auth/**",          // Đăng nhập, đăng ký
-                                "/api/rooms/**",         // Xem danh sách phòng
-                                "/api/branches/**",      // Xem chi nhánh
-                                
+                                "/api/auth/**", // Đăng nhập, đăng ký
+                                "/api/rooms/**", // Xem danh sách phòng
+                                "/api/branches/**", // Xem chi nhánh
+
                                 // --- CHO PHÉP TRUY CẬP ẢNH ---
-                                "/uploads/**",                       // Nếu dùng WebConfig resource handler
-                                "/api/maintenance/images/**",        // Controller serve ảnh maintenance
-                                "/api/partner-posts/images/**",      // Controller serve ảnh partner posts
-                                
+                                "/uploads/**", // Nếu dùng WebConfig resource handler
+                                "/api/maintenance/images/**", // Controller serve ảnh maintenance
+                                "/api/partner-posts/images/**", // Controller serve ảnh partner posts
+
+                                // --- MoMo IPN callback (public) ---
+                                "/api/momo/ipn-handler",
+
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
-                                "/v3/api-docs/**"
-                        ).permitAll()
+                                "/v3/api-docs/**")
+                        .permitAll()
 
                         // --- 2. API YÊU CẦU XÁC THỰC ---
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-        
+
         return http.build();
     }
 

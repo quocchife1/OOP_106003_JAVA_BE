@@ -31,5 +31,7 @@ public class PartnerPostResponse {
     private String partnerName;
     private String partnerPhone;
     private String rejectReason;
+    private String paymentUrl;
+    private Integer views;
     private List<String> imageUrls; // URLs của ảnh
 }

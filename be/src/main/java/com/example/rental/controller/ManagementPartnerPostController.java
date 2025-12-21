@@ -34,8 +34,8 @@ public class ManagementPartnerPostController {
     private final PostImageRepository postImageRepository;
 
     public ManagementPartnerPostController(PartnerPostRepository partnerPostRepository,
-                                           EmployeeRepository employeeRepository,
-                                           PostImageRepository postImageRepository) {
+            EmployeeRepository employeeRepository,
+            PostImageRepository postImageRepository) {
         this.partnerPostRepository = partnerPostRepository;
         this.employeeRepository = employeeRepository;
         this.postImageRepository = postImageRepository;
@@ -44,56 +44,57 @@ public class ManagementPartnerPostController {
     @GetMapping("")
     @PreAuthorize("hasAnyRole('ADMIN','EMPLOYEE','RECEPTIONIST')")
     @Transactional(readOnly = true)
-        public ResponseEntity<ApiResponseDto<Page<PartnerPostResponse>>> list(
+    public ResponseEntity<ApiResponseDto<Page<PartnerPostResponse>>> list(
             @RequestParam(required = false) String status,
             @RequestParam(required = false, defaultValue = "") String q,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "12") int size
-        ) {
+            @RequestParam(defaultValue = "12") int size) {
         List<com.example.rental.entity.PostApprovalStatus> statuses = normalizeStatuses(status);
         String keyword = q == null ? "" : q.trim();
-        Pageable pageable = PageRequest.of(Math.max(page, 0), Math.max(size, 1), Sort.by(Sort.Direction.DESC, "createdAt"));
+        Pageable pageable = PageRequest.of(Math.max(page, 0), Math.max(size, 1),
+                Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<PartnerPostListItem> result = partnerPostRepository
-            .pageListItems(statuses, keyword, pageable);
+                .pageListItems(statuses, keyword, pageable);
         Page<PartnerPostResponse> resp = result.map(item -> PartnerPostResponse.builder()
-            .id(item.getId())
-            .title(item.getTitle())
-            .description(item.getDescription())
-            .price(item.getPrice())
-            .area(item.getArea())
-            .address(item.getAddress())
-            .postType(item.getPostType())
-            .status(item.getStatus())
-            .createdAt(item.getCreatedAt())
-            .approvedAt(item.getApprovedAt())
-            .approvedByName(item.getApprovedByName())
-            .partnerId(item.getPartnerId())
-            .partnerName(item.getPartnerName())
-            .partnerPhone(item.getPartnerPhone())
-            .imageUrls(java.util.List.of())
-            .rejectReason(item.getRejectReason())
-            .build());
+                .id(item.getId())
+                .title(item.getTitle())
+                .description(item.getDescription())
+                .price(item.getPrice())
+                .area(item.getArea())
+                .address(item.getAddress())
+                .postType(item.getPostType())
+                .status(item.getStatus())
+                .createdAt(item.getCreatedAt())
+                .approvedAt(item.getApprovedAt())
+                .approvedByName(item.getApprovedByName())
+                .partnerId(item.getPartnerId())
+                .partnerName(item.getPartnerName())
+                .partnerPhone(item.getPartnerPhone())
+                .imageUrls(java.util.List.of())
+                .rejectReason(item.getRejectReason())
+                .build());
         return ResponseEntity.ok(ApiResponseDto.success(200, "Danh sách tin theo bộ lọc", resp));
-        }
+    }
 
-        private List<com.example.rental.entity.PostApprovalStatus> normalizeStatuses(String raw) {
-            if (raw == null || raw.isBlank()) {
-                return java.util.Arrays.asList(
-                        com.example.rental.entity.PostApprovalStatus.PENDING_APPROVAL,
-                        com.example.rental.entity.PostApprovalStatus.APPROVED,
-                        com.example.rental.entity.PostApprovalStatus.REJECTED
-                );
-            }
-            String norm = raw.trim().toUpperCase();
-            if ("PENDING".equals(norm)) norm = "PENDING_APPROVAL";
-            return java.util.List.of(com.example.rental.entity.PostApprovalStatus.valueOf(norm));
+    private List<com.example.rental.entity.PostApprovalStatus> normalizeStatuses(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return java.util.Arrays.asList(
+                    com.example.rental.entity.PostApprovalStatus.PENDING_APPROVAL,
+                    com.example.rental.entity.PostApprovalStatus.APPROVED,
+                    com.example.rental.entity.PostApprovalStatus.REJECTED);
         }
+        String norm = raw.trim().toUpperCase();
+        if ("PENDING".equals(norm))
+            norm = "PENDING_APPROVAL";
+        return java.util.List.of(com.example.rental.entity.PostApprovalStatus.valueOf(norm));
+    }
 
     @GetMapping("/pending")
     @PreAuthorize("hasAnyRole('ADMIN','EMPLOYEE','RECEPTIONIST')")
     @Transactional(readOnly = true)
     public ResponseEntity<ApiResponseDto<Page<PartnerPostResponse>>> listPending(Pageable pageable) {
-        Page<PartnerPost> page = partnerPostRepository.findByStatusInAndIsDeletedFalse(java.util.List.of(com.example.rental.entity.PostApprovalStatus.PENDING_APPROVAL), pageable);
+        Page<PartnerPost> page = partnerPostRepository.findByStatusInAndIsDeletedFalse(
+                java.util.List.of(com.example.rental.entity.PostApprovalStatus.PENDING_APPROVAL), pageable);
         Page<PartnerPostResponse> resp = page.map(this::mapToResponse);
         return ResponseEntity.ok(ApiResponseDto.success(200, "Danh sách tin chờ duyệt", resp));
     }
@@ -101,14 +102,16 @@ public class ManagementPartnerPostController {
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','EMPLOYEE','RECEPTIONIST')")
     public ResponseEntity<ApiResponseDto<PartnerPostResponse>> getById(@PathVariable Long id) {
-        PartnerPost post = partnerPostRepository.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy tin"));
+        PartnerPost post = partnerPostRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tin"));
         return ResponseEntity.ok(ApiResponseDto.success(200, "Lấy chi tiết tin thành công", mapToResponse(post)));
     }
 
     @PostMapping("/{id}/approve")
     @PreAuthorize("hasAnyRole('ADMIN','EMPLOYEE','RECEPTIONIST')")
     public ResponseEntity<ApiResponseDto<Void>> approve(@PathVariable Long id) {
-        PartnerPost post = partnerPostRepository.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy tin"));
+        PartnerPost post = partnerPostRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tin"));
         post.setStatus(com.example.rental.entity.PostApprovalStatus.APPROVED);
         post.setApprovedAt(java.time.LocalDateTime.now());
         // set approvedBy from current authenticated employee if available
@@ -118,15 +121,18 @@ public class ManagementPartnerPostController {
             if (username != null && username.trim().length() > 0) {
                 employeeRepository.findByUsername(username).ifPresent(post::setApprovedBy);
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         partnerPostRepository.save(post);
         return ResponseEntity.ok(ApiResponseDto.success(200, "Đã duyệt tin", null));
     }
 
     @PostMapping("/{id}/reject")
     @PreAuthorize("hasAnyRole('ADMIN','EMPLOYEE','RECEPTIONIST')")
-    public ResponseEntity<ApiResponseDto<Void>> reject(@PathVariable Long id, @RequestParam(required = false) String reason) {
-        PartnerPost post = partnerPostRepository.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy tin"));
+    public ResponseEntity<ApiResponseDto<Void>> reject(@PathVariable Long id,
+            @RequestParam(required = false) String reason) {
+        PartnerPost post = partnerPostRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tin"));
         post.setStatus(com.example.rental.entity.PostApprovalStatus.REJECTED);
         post.setRejectReason(reason);
         try {
@@ -135,7 +141,8 @@ public class ManagementPartnerPostController {
             if (username != null && username.trim().length() > 0) {
                 employeeRepository.findByUsername(username).ifPresent(post::setApprovedBy);
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         partnerPostRepository.save(post);
         return ResponseEntity.ok(ApiResponseDto.success(200, "Đã từ chối tin", null));
     }
@@ -161,6 +168,7 @@ public class ManagementPartnerPostController {
                 .partnerName(post.getPartner().getCompanyName())
                 .partnerPhone(post.getPartner().getPhoneNumber())
                 .rejectReason(post.getRejectReason())
+                .views(post.getViews())
                 .imageUrls(imageUrls)
                 .build();
     }
@@ -186,8 +194,14 @@ public class ManagementPartnerPostController {
     public static class IdsRequest {
         public java.util.List<Long> ids;
         public String reason; // optional for reject-batch
-        public java.util.List<Long> getIds() { return ids; }
-        public String getReason() { return reason; }
+
+        public java.util.List<Long> getIds() {
+            return ids;
+        }
+
+        public String getReason() {
+            return reason;
+        }
     }
 
     @PostMapping("/approve-batch")
@@ -232,9 +246,16 @@ public class ManagementPartnerPostController {
     @GetMapping("/stats")
     @PreAuthorize("hasAnyRole('ADMIN','EMPLOYEE','RECEPTIONIST')")
     public ResponseEntity<ApiResponseDto<Map<String, Object>>> stats() {
-        long pending = partnerPostRepository.countByStatusAndIsDeletedFalse(com.example.rental.entity.PostApprovalStatus.PENDING_APPROVAL);
-        long approved = partnerPostRepository.countByStatusAndIsDeletedFalse(com.example.rental.entity.PostApprovalStatus.APPROVED);
-        long rejected = partnerPostRepository.countByStatusAndIsDeletedFalse(com.example.rental.entity.PostApprovalStatus.REJECTED);
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        long pending = partnerPostRepository
+                .countByStatusAndIsDeletedFalse(com.example.rental.entity.PostApprovalStatus.PENDING_APPROVAL);
+        System.out.println("So bai dang PENDING_APPROVAL: " + pending);
+        long approved = partnerPostRepository
+                .countByStatusAndIsDeletedFalse(com.example.rental.entity.PostApprovalStatus.APPROVED);
+        long rejected = partnerPostRepository
+                .countByStatusAndIsDeletedFalse(com.example.rental.entity.PostApprovalStatus.REJECTED);
 
         LocalDate today = LocalDate.now();
         LocalDateTime start = today.atStartOfDay();
@@ -245,8 +266,7 @@ public class ManagementPartnerPostController {
                 "pending", pending,
                 "approved", approved,
                 "rejected", rejected,
-                "approvedToday", approvedToday
-        );
+                "approvedToday", approvedToday);
         return ResponseEntity.ok(ApiResponseDto.success(200, "Thống kê duyệt tin", result));
     }
 }

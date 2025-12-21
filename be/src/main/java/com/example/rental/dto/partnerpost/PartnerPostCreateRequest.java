@@ -32,5 +32,5 @@ public class PartnerPostCreateRequest {
     private String address;
 
     @NotNull(message = "Loại tin không được để trống")
-    private PostType postType; // NORMAL or PRIORITY
+    private PostType postType; // NORMAL, VIP1, VIP2, VIP3
 }
