@@ -97,10 +97,6 @@ public class PartnerPostServiceImpl implements PartnerPostService {
 
     @Override
     @Transactional
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
     public PartnerPost savePost(PartnerPost post) {
         // Lưu trực tiếp không thay đổi status, dùng cho update views
         return partnerPostRepository.save(post);
@@ -108,18 +104,7 @@ public class PartnerPostServiceImpl implements PartnerPostService {
 
     @Override
     @Transactional
-=======
     @Audited(action = AuditAction.DELETE_PARTNER_POST, targetType = "PARTNER_POST", description = "Xóa (ẩn) tin đối tác")
->>>>>>> Stashed changes
-=======
-    @Audited(action = AuditAction.DELETE_PARTNER_POST, targetType = "PARTNER_POST", description = "Xóa (ẩn) tin đối tác")
->>>>>>> Stashed changes
-=======
-    @Audited(action = AuditAction.DELETE_PARTNER_POST, targetType = "PARTNER_POST", description = "Xóa (ẩn) tin đối tác")
->>>>>>> Stashed changes
-=======
-    @Audited(action = AuditAction.DELETE_PARTNER_POST, targetType = "PARTNER_POST", description = "Xóa (ẩn) tin đối tác")
->>>>>>> Stashed changes
     public void deletePost(Long id) {
         partnerPostRepository.findById(id).ifPresent(post -> {
             post.setDeleted(true);

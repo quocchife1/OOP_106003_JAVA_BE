@@ -5,11 +5,8 @@ import resolveImageUrl from '../utils/resolveImageUrl';
 export default function PartnerPostCard({ post }) {
   const getThumbnail = (post) => {
     if (post.imageUrls && post.imageUrls.length > 0) {
-<<<<<<< Updated upstream
       const url = post.imageUrls[0];
       return url.startsWith('http') ? url : `http://localhost:8080${url}`;
-=======
->>>>>>> Stashed changes
         return resolveImageUrl(post.imageUrls[0]);
     }
     return 'https://placehold.co/600x400?text=No+Image';
