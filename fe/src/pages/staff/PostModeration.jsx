@@ -362,10 +362,8 @@ export default function PostModeration() {
             )}
           </div>
         </div>
-<<<<<<< Updated upstream
       )}
     </div>
-=======
         {loading? (
           <div>Tải dữ liệu...</div>
         ) : posts.length===0 ? (
@@ -469,6 +467,5 @@ export default function PostModeration() {
           </div>
         )}
       </div>
->>>>>>> Stashed changes
   );
 }
