@@ -29,6 +29,13 @@ public class RoomServiceImpl implements RoomService {
     private final BranchRepository branchRepository;
 
     @Override
+    public List<RoomResponse> getAllRooms() {
+        return roomRepository.findAll().stream()
+                .map(RoomMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     @Audited(action = AuditAction.CREATE_ROOM, targetType = "ROOM", description = "Tạo phòng mới")
     public RoomResponse createRoom(RoomRequest request) {
         Branch branch = branchRepository.findByBranchCode(request.getBranchCode())
@@ -70,6 +77,15 @@ public class RoomServiceImpl implements RoomService {
         room.setStatus(request.getStatus());
         room.setDescription(request.getDescription());
 
+        return RoomMapper.toResponse(roomRepository.save(room));
+    }
+
+    @Override
+    @Audited(action = AuditAction.CHANGE_ROOM_STATUS, targetType = "ROOM", description = "Đổi trạng thái phòng")
+    public RoomResponse updateRoomStatus(Long id, RoomStatus status) {
+        Room room = roomRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Room not found"));
+        room.setStatus(status);
         return RoomMapper.toResponse(roomRepository.save(room));
     }
 

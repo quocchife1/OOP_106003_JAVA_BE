@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import maintenanceApi from '../../api/maintenanceApi';
+import resolveImageUrl from '../../utils/resolveImageUrl';
 
 export default function MaintenanceRequests() {
   const { user } = useSelector((state) => state.auth);
@@ -107,20 +108,10 @@ export default function MaintenanceRequests() {
     }
   };
 
-// Helper: Xử lý URL ảnh từ Backend
+  // Helper: Xử lý URL ảnh từ Backend
   const getImageUrl = (path) => {
     if (!path) return 'https://placehold.co/100?text=NoImage';
-    
-    // Nếu path đã là full URL (http...) thì dùng luôn
-    if (path.startsWith('http')) {
-        return path;
-    }
-    
-    // Fallback cho dữ liệu cũ (nếu có)
-    if (path.startsWith('/uploads')) {
-        return `http://localhost:8080${path}`; 
-    }
-    return path;
+    return resolveImageUrl(path);
   };
   const getStatusConfig = (status) => {
     switch (status) {

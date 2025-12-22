@@ -11,5 +11,9 @@ public interface MaintenanceRequestService {
 
     List<MaintenanceResponse> getRequestsByStatus(String status);
 
+    List<MaintenanceResponse> getAllRequests();
+
     MaintenanceResponse updateRequest(Long requestId, String resolution, String status, String technician, String cost);
+
+    MaintenanceResponse updateStatus(Long requestId, String status);
 }

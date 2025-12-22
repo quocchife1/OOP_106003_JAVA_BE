@@ -26,7 +26,7 @@ public class DashboardController {
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @Operation(summary = "Lấy dashboard tổng quát cho Giám đốc")
     public ResponseEntity<ApiResponseDto<DirectorDashboardDTO>> getDirectorDashboard(
-            @RequestParam Long branchId) {
+            @RequestParam(required = false) Long branchId) {
             DirectorDashboardDTO dto = dashboardService.getDirectorDashboard(branchId);
             return ResponseEntity.ok(ApiResponseDto.success(200, "Director dashboard fetched", dto));
     }
@@ -35,7 +35,7 @@ public class DashboardController {
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @Operation(summary = "Lấy dashboard với phạm vi ngày tùy chỉnh")
     public ResponseEntity<ApiResponseDto<DirectorDashboardDTO>> getDashboardByDateRange(
-            @RequestParam Long branchId,
+            @RequestParam(required = false) Long branchId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
             DirectorDashboardDTO dto = dashboardService.getDashboardByDateRange(branchId, startDate, endDate);

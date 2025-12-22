@@ -9,6 +9,7 @@ import com.example.rental.repository.PartnerRepository;
 import com.example.rental.repository.TenantRepository;
 import com.example.rental.security.CustomUserDetails;
 import com.example.rental.security.JwtProvider;
+import com.example.rental.service.AuditLogService;
 import com.example.rental.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -28,6 +29,8 @@ public class AuthServiceImpl implements AuthService {
     private final JwtProvider jwtProvider;
     private final PasswordEncoder passwordEncoder;
 
+    private final AuditLogService auditLogService;
+
     private final EmployeeRepository employeeRepository;
     private final TenantRepository tenantRepository;
     private final PartnerRepository partnerRepository;
@@ -35,10 +38,31 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponse login(AuthLoginRequest request) {
-        // 1. Xác thực (Authentication)
-        Authentication authentication = authenticationManager.authenticate(
+        Authentication authentication;
+        try {
+            // 1. Xác thực (Authentication)
+            authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
-        );
+            );
+        } catch (Exception ex) {
+            // Record failed login attempts
+            auditLogService.logAction(
+                request.getUsername() != null ? request.getUsername() : "UNKNOWN",
+                "ANONYMOUS",
+                AuditAction.LOGIN_FAILED,
+                "AUTH",
+                null,
+                "Đăng nhập thất bại",
+                null,
+                null,
+                "unknown",
+                null,
+                "unknown",
+                "FAILURE",
+                ex.getMessage()
+            );
+            throw ex;
+        }
         
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
@@ -62,14 +86,13 @@ public class AuthServiceImpl implements AuthService {
         String phone = "";
         String address = "";
 
-        if (role.contains("EMPLOYEE") || role.contains("ADMIN") || role.contains("MANAGER")) {
-            Optional<Employees> emp = employeeRepository.findByUsername(username);
-            if (emp.isPresent()) {
-                id = emp.get().getId();
-                fullName = emp.get().getFullName();
-                email = emp.get().getEmail();
-                phone = emp.get().getPhoneNumber();
-            }
+        // Employees: authority is ROLE_<EmployeePosition> (e.g. ROLE_ACCOUNTANT, ROLE_MAINTENANCE, ROLE_ADMIN...)
+        Optional<Employees> emp = employeeRepository.findByUsername(username);
+        if (emp.isPresent()) {
+            id = emp.get().getId();
+            fullName = emp.get().getFullName();
+            email = emp.get().getEmail();
+            phone = emp.get().getPhoneNumber();
         } else if (role.contains("TENANT")) {
             Optional<Tenant> tenant = tenantRepository.findByUsername(username);
             if (tenant.isPresent()) {
@@ -103,6 +126,23 @@ public class AuthServiceImpl implements AuthService {
         }
 
         String cleanRole = role.replace("ROLE_", "");
+
+        // Record successful login
+        auditLogService.logAction(
+            username,
+            cleanRole,
+            AuditAction.LOGIN_SUCCESS,
+            "AUTH",
+            null,
+            "Đăng nhập thành công",
+            null,
+            "{\"role\":\"" + cleanRole + "\"}",
+            "unknown",
+            null,
+            "unknown",
+            "SUCCESS",
+            null
+        );
 
         return AuthResponse.builder()
                 .accessToken(jwt)

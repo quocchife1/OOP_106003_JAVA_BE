@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import com.example.rental.security.Audited;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -54,6 +55,7 @@ public class ReservationServiceImpl implements ReservationService {
 
 @Override
     @Transactional
+    @Audited(action = AuditAction.CREATE_RESERVATION, targetType = "RESERVATION", description = "Tạo yêu cầu giữ phòng")
     public ReservationResponse createReservation(ReservationRequest request) {
         Room room = roomRepository.findById(request.getRoomId())
                 .orElseThrow(() -> new RuntimeException("Phòng không tồn tại"));
@@ -181,6 +183,7 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     @Transactional
+    @Audited(action = AuditAction.CONFIRM_RESERVATION, targetType = "RESERVATION", description = "Xác nhận giữ phòng")
     public ReservationResponse confirmReservation(Long reservationId) {
         Reservation r = reservationRepository.findById(reservationId).orElseThrow();
         r.setStatus(ReservationStatus.RESERVED);
@@ -192,6 +195,7 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     @Transactional
+    @Audited(action = AuditAction.CANCEL_RESERVATION, targetType = "RESERVATION", description = "Huỷ giữ phòng")
     public Reservation cancelReservation(Long reservationId) {
         Reservation r = reservationRepository.findById(reservationId).orElseThrow();
         if(r.getStatus() == ReservationStatus.RESERVED) {
@@ -205,6 +209,7 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     @Transactional
+    @Audited(action = AuditAction.CREATE_CONTRACT, targetType = "CONTRACT", description = "Chuyển giữ phòng thành hợp đồng")
     public Long convertReservationToContract(Long reservationId) {
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu đặt phòng."));

@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux';
 import roomApi from '../api/roomApi';
 import reservationApi from '../api/reservationApi';
 import MainLayout from '../components/MainLayout';
+import resolveImageUrl from '../utils/resolveImageUrl';
 
 export default function RoomDetailPage() {
   const { id } = useParams();
@@ -31,7 +32,7 @@ export default function RoomDetailPage() {
         const data = await roomApi.getById(id);
         setRoom(data);
         if (data.images && data.images.length > 0) {
-          setSelectedImage(data.images[0].imageUrl);
+          setSelectedImage(resolveImageUrl(data.images[0].imageUrl));
         }
       } catch (error) {
         console.error("Lỗi tải thông tin phòng:", error);
@@ -129,11 +130,14 @@ export default function RoomDetailPage() {
             </div>
             {room.images && room.images.length > 0 && (
               <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-                {room.images.map((img) => (
-                  <button key={img.id} onClick={() => setSelectedImage(img.imageUrl)} className={`relative w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 transition-all duration-200 border-2 ${selectedImage === img.imageUrl ? 'border-indigo-600 opacity-100 scale-105' : 'border-transparent opacity-70 hover:opacity-100'}`}>
-                    <img src={img.imageUrl} alt="Thumbnail" className="w-full h-full object-cover" />
-                  </button>
-                ))}
+                {room.images.map((img) => {
+                  const fullUrl = resolveImageUrl(img.imageUrl);
+                  return (
+                    <button key={img.id} onClick={() => setSelectedImage(fullUrl)} className={`relative w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 transition-all duration-200 border-2 ${selectedImage === fullUrl ? 'border-indigo-600 opacity-100 scale-105' : 'border-transparent opacity-70 hover:opacity-100'}`}>
+                      <img src={fullUrl} alt="Thumbnail" className="w-full h-full object-cover" onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/120?text=Error'; }} />
+                    </button>
+                  );
+                })}
               </div>
             )}
             <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">

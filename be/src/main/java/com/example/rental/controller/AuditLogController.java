@@ -141,4 +141,29 @@ public class AuditLogController {
         AuditStatistics statistics = auditLogService.getStatistics(startDate, endDate, branchId);
         return ResponseEntity.ok(com.example.rental.dto.ApiResponseDto.success(200, "Audit statistics fetched", statistics));
     }
+
+    @GetMapping("/search")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @Operation(summary = "Tìm audit log nâng cao (lọc nhiều điều kiện)")
+    public ResponseEntity<com.example.rental.dto.ApiResponseDto<Page<AuditLogDTO>>> search(
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to,
+            @RequestParam(required = false) String actor,
+            @RequestParam(required = false) String action,
+            @RequestParam(required = false) String entityType,
+            @RequestParam(required = false) Long entityId,
+            @RequestParam(required = false) Long branchId,
+            Pageable pageable
+    ) {
+        com.example.rental.dto.audit.AuditLogSearchCriteria criteria = new com.example.rental.dto.audit.AuditLogSearchCriteria();
+        criteria.setFrom(from);
+        criteria.setTo(to);
+        criteria.setActor(actor);
+        criteria.setAction(action);
+        criteria.setEntityType(entityType);
+        criteria.setEntityId(entityId);
+        criteria.setBranchId(branchId);
+        Page<AuditLogDTO> page = auditLogService.search(criteria, pageable);
+        return ResponseEntity.ok(com.example.rental.dto.ApiResponseDto.success(200, "Audit search fetched", page));
+    }
 }

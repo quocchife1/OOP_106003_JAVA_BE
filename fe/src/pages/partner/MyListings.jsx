@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import partnerApi from '../../api/partnerApi';
+import resolveImageUrl from '../../utils/resolveImageUrl';
 
 export default function MyListings() {
   const [listings, setListings] = useState([]);
@@ -99,10 +100,17 @@ export default function MyListings() {
 
   // Helper để lấy ảnh đầu tiên hoặc ảnh placeholder
   const getThumbnail = (item) => {
+<<<<<<< Updated upstream
     // API có thể trả về imageUrls (List<String>) hoặc images (List<Object>)
     if (item.imageUrls && item.imageUrls.length > 0) return `http://localhost:8080${item.imageUrls[0]}`;
     if (item.images && item.images.length > 0) return `http://localhost:8080${item.images[0].imageUrl || item.images[0]}`;
     return 'https://placehold.co/100?text=NoImage';
+=======
+      // API có thể trả về imageUrls (List<String>) hoặc images (List<Object>)
+      if (item.imageUrls && item.imageUrls.length > 0) return resolveImageUrl(item.imageUrls[0]);
+      if (item.images && item.images.length > 0) return resolveImageUrl(item.images[0].imageUrl || item.images[0]);
+      return 'https://placehold.co/100?text=NoImage';
+>>>>>>> Stashed changes
   };
 
   if (loading) return <div className="p-10 text-center text-gray-500">Đang tải dữ liệu...</div>;

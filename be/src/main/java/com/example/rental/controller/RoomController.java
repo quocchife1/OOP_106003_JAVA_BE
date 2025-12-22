@@ -22,6 +22,13 @@ public class RoomController {
 
     private final RoomService roomService;
 
+    @Operation(summary = "Lấy tất cả phòng", description = "Truy xuất danh sách tất cả phòng trong hệ thống")
+    @GetMapping
+    public ResponseEntity<com.example.rental.dto.ApiResponseDto<List<RoomResponse>>> getAllRooms() {
+        List<RoomResponse> list = roomService.getAllRooms();
+        return ResponseEntity.ok(com.example.rental.dto.ApiResponseDto.success(200, "Rooms fetched", list));
+    }
+
     @Operation(summary = "Tạo phòng mới", description = "Thêm mới một phòng vào hệ thống với branchCode và roomNumber")
     @PostMapping
     public ResponseEntity<com.example.rental.dto.ApiResponseDto<RoomResponse>> createRoom(@RequestBody RoomRequest request) {
@@ -35,6 +42,25 @@ public class RoomController {
     public ResponseEntity<com.example.rental.dto.ApiResponseDto<RoomResponse>> updateRoom(@PathVariable Long id, @RequestBody RoomRequest request) {
         RoomResponse resp = roomService.updateRoom(id, request);
         return ResponseEntity.ok(com.example.rental.dto.ApiResponseDto.success(200, "Room updated", resp));
+    }
+
+    @Operation(summary = "Cập nhật trạng thái phòng", description = "Đổi trạng thái phòng (AVAILABLE, RESERVED, OCCUPIED, MAINTENANCE) mà không cần gửi toàn bộ RoomRequest")
+    @PutMapping("/{id}/status")
+    public ResponseEntity<com.example.rental.dto.ApiResponseDto<RoomResponse>> updateRoomStatus(
+            @PathVariable Long id,
+            @RequestBody java.util.Map<String, String> body
+    ) {
+        String statusStr = body == null ? null : body.get("status");
+        if (statusStr == null || statusStr.isBlank()) {
+            return ResponseEntity.badRequest().body(com.example.rental.dto.ApiResponseDto.error(400, "Missing status", (RoomResponse) null));
+        }
+        try {
+            RoomStatus status = RoomStatus.valueOf(statusStr.toUpperCase());
+            RoomResponse resp = roomService.updateRoomStatus(id, status);
+            return ResponseEntity.ok(com.example.rental.dto.ApiResponseDto.success(200, "Room status updated", resp));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(com.example.rental.dto.ApiResponseDto.error(400, "Invalid status", (RoomResponse) null));
+        }
     }
 
     @Operation(summary = "Xóa phòng theo ID", description = "Xóa vĩnh viễn phòng trong hệ thống")

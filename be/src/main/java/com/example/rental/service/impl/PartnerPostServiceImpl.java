@@ -3,8 +3,10 @@ package com.example.rental.service.impl;
 import com.example.rental.entity.Employees;
 import com.example.rental.entity.PartnerPost;
 import com.example.rental.entity.PostApprovalStatus;
+import com.example.rental.entity.AuditAction;
 import com.example.rental.repository.EmployeeRepository;
 import com.example.rental.repository.PartnerPostRepository;
+import com.example.rental.security.Audited;
 import com.example.rental.service.PartnerPostService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,6 +27,7 @@ public class PartnerPostServiceImpl implements PartnerPostService {
 
     @Override
     @Transactional
+    @Audited(action = AuditAction.CREATE_PARTNER_POST, targetType = "PARTNER_POST", description = "Tạo tin đối tác")
     public PartnerPost createPost(PartnerPost post) {
         // ĐÃ SỬA: Sử dụng PostApprovalStatus.PENDING
         post.setStatus(PostApprovalStatus.PENDING_PAYMENT);
@@ -80,6 +83,7 @@ public class PartnerPostServiceImpl implements PartnerPostService {
 
     @Override
     @Transactional
+    @Audited(action = AuditAction.UPDATE_PARTNER_POST, targetType = "PARTNER_POST", description = "Cập nhật tin đối tác")
     public PartnerPost updatePost(PartnerPost post) {
         // Giữ nguyên trạng thái nếu đang chờ thanh toán;
         // chỉ reset về PENDING_APPROVAL khi không ở trạng thái PENDING_PAYMENT
@@ -93,6 +97,10 @@ public class PartnerPostServiceImpl implements PartnerPostService {
 
     @Override
     @Transactional
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
     public PartnerPost savePost(PartnerPost post) {
         // Lưu trực tiếp không thay đổi status, dùng cho update views
         return partnerPostRepository.save(post);
@@ -100,6 +108,18 @@ public class PartnerPostServiceImpl implements PartnerPostService {
 
     @Override
     @Transactional
+=======
+    @Audited(action = AuditAction.DELETE_PARTNER_POST, targetType = "PARTNER_POST", description = "Xóa (ẩn) tin đối tác")
+>>>>>>> Stashed changes
+=======
+    @Audited(action = AuditAction.DELETE_PARTNER_POST, targetType = "PARTNER_POST", description = "Xóa (ẩn) tin đối tác")
+>>>>>>> Stashed changes
+=======
+    @Audited(action = AuditAction.DELETE_PARTNER_POST, targetType = "PARTNER_POST", description = "Xóa (ẩn) tin đối tác")
+>>>>>>> Stashed changes
+=======
+    @Audited(action = AuditAction.DELETE_PARTNER_POST, targetType = "PARTNER_POST", description = "Xóa (ẩn) tin đối tác")
+>>>>>>> Stashed changes
     public void deletePost(Long id) {
         partnerPostRepository.findById(id).ifPresent(post -> {
             post.setDeleted(true);

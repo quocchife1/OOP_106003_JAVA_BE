@@ -7,6 +7,7 @@ public enum AuditAction {
     // Authentication
     LOGIN_SUCCESS,
     LOGIN_FAILED,
+    LOGOUT,
     REGISTER_GUEST,
     REGISTER_TENANT,
     REGISTER_PARTNER,
@@ -51,6 +52,11 @@ public enum AuditAction {
     UPDATE_ROOM,
     CHANGE_ROOM_STATUS,
     DELETE_ROOM,
+
+    // Reservation (booking) actions
+    CREATE_RESERVATION,
+    CONFIRM_RESERVATION,
+    CANCEL_RESERVATION,
 
     // Maintenance
     CREATE_MAINTENANCE_REQUEST,

@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import publicPartnerApi from '../../api/publicPartnerApi';
 import userApi from '../../api/userApi';
 import MainLayout from '../../components/MainLayout';
+import resolveImageUrl from '../../utils/resolveImageUrl';
 
 export default function PartnerPostDetail() {
   const { id } = useParams();
@@ -29,7 +30,7 @@ export default function PartnerPostDetail() {
                 }
                 setPost({ ...data, partnerPhone });
         if (data.imageUrls && data.imageUrls.length > 0) {
-            setSelectedImage(`http://localhost:8080${data.imageUrls[0]}`);
+            setSelectedImage(resolveImageUrl(data.imageUrls[0]));
         }
       } catch (e) {
         console.error('Lỗi tải chi tiết tin đối tác', e);
@@ -41,7 +42,7 @@ export default function PartnerPostDetail() {
     fetchDetail();
   }, [id]);
 
-  const getImageFullUrl = (url) => url?.startsWith('http') ? url : `http://localhost:8080${url}`;
+    const getImageFullUrl = (url) => resolveImageUrl(url);
 
     if (loading) return (
         <MainLayout>

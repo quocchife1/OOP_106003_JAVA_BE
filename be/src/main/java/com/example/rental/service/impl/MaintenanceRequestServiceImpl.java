@@ -4,6 +4,7 @@ import com.example.rental.entity.*;
 import com.example.rental.mapper.MaintenanceMapper;
 import com.example.rental.dto.maintenance.*;
 import com.example.rental.repository.*;
+import com.example.rental.security.Audited;
 import com.example.rental.service.MaintenanceRequestService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,7 @@ public class MaintenanceRequestServiceImpl implements MaintenanceRequestService 
 
     @Override
     @Transactional
+    @Audited(action = AuditAction.CREATE_MAINTENANCE_REQUEST, targetType = "MAINTENANCE_REQUEST", description = "Tạo yêu cầu bảo trì")
     public MaintenanceResponse createRequest(MaintenanceRequestCreate request) {
         Tenant tenant;
         if (request.getTenantId() != null) {
@@ -115,13 +117,32 @@ public class MaintenanceRequestServiceImpl implements MaintenanceRequestService 
     public List<MaintenanceResponse> getRequestsByStatus(String status) {
         return maintenanceRequestRepository.findByStatus(MaintenanceStatus.valueOf(status)).stream().map(maintenanceMapper::toResponse).toList();
     }
+
+    @Override
+    public List<MaintenanceResponse> getAllRequests() {
+        return maintenanceRequestRepository.findAll().stream()
+                .sorted(java.util.Comparator.comparing(MaintenanceRequest::getId).reversed())
+                .map(maintenanceMapper::toResponse)
+                .toList();
+    }
     @Override
     @Transactional
+    @Audited(action = AuditAction.UPDATE_MAINTENANCE_STATUS, targetType = "MAINTENANCE_REQUEST", description = "Cập nhật xử lý bảo trì")
     public MaintenanceResponse updateRequest(Long requestId, String resolution, String status, String technician, String cost) {
         MaintenanceRequest entity = maintenanceRequestRepository.findById(requestId).orElseThrow(() -> new EntityNotFoundException("Not found"));
         if (resolution != null) entity.setResolution(resolution);
         if (technician != null) entity.setTechnicianName(technician);
         if (cost != null) entity.setCost(new BigDecimal(cost));
+        if (status != null) entity.setStatus(MaintenanceStatus.valueOf(status));
+        return maintenanceMapper.toResponse(maintenanceRequestRepository.save(entity));
+    }
+
+    @Override
+    @Transactional
+    @Audited(action = AuditAction.UPDATE_MAINTENANCE_STATUS, targetType = "MAINTENANCE_REQUEST", description = "Cập nhật trạng thái bảo trì")
+    public MaintenanceResponse updateStatus(Long requestId, String status) {
+        MaintenanceRequest entity = maintenanceRequestRepository.findById(requestId)
+                .orElseThrow(() -> new EntityNotFoundException("Not found"));
         if (status != null) entity.setStatus(MaintenanceStatus.valueOf(status));
         return maintenanceMapper.toResponse(maintenanceRequestRepository.save(entity));
     }

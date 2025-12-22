@@ -10,9 +10,9 @@ export default function RoomManagement() {
     const fetchRooms = async () => {
       setLoading(true);
       try {
-        const res = await roomApi.getAllRooms?.() || {};
-        const data = res?.data?.result || res?.data || [];
-        setRooms(Array.isArray(data) ? data : (data.content || []));
+        const res = await roomApi.getAllRooms();
+        const data = Array.isArray(res) ? res : (res?.content || []);
+        setRooms(Array.isArray(data) ? data : []);
       } catch (e) {
         console.error('Lỗi tải danh sách phòng', e);
         setRooms([]);
@@ -42,8 +42,8 @@ export default function RoomManagement() {
           <label className="text-sm text-gray-600">Lọc trạng thái:</label>
           <select className="border rounded px-3 py-2" value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}>
             <option value="ALL">Tất cả</option>
-            <option value="EMPTY">Trống</option>
-            <option value="RENTED">Đang thuê</option>
+            <option value="AVAILABLE">Trống</option>
+            <option value="OCCUPIED">Đang thuê</option>
             <option value="MAINTENANCE">Bảo trì</option>
             <option value="RESERVED">Đã đặt</option>
           </select>
@@ -60,7 +60,7 @@ export default function RoomManagement() {
                 </div>
                 <p className="text-sm text-gray-600">Giá: {new Intl.NumberFormat('vi-VN').format(room.price || room.monthlyPrice)}đ</p>
                 <div className="grid grid-cols-2 gap-2 mt-3">
-                  {['EMPTY','RENTED','MAINTENANCE','RESERVED'].map(st => (
+                  {['AVAILABLE','OCCUPIED','MAINTENANCE','RESERVED'].map(st => (
                     <button key={st} className={`text-xs px-2 py-2 rounded border ${room.status===st? 'bg-indigo-600 text-white':'bg-white'}`} onClick={()=>updateStatus(room.id, st)}>
                       {st}
                     </button>

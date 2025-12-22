@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import roomApi from '../api/roomApi';
 import publicPartnerApi from '../api/publicPartnerApi';
+import resolveImageUrl from '../utils/resolveImageUrl';
 import RoomCard from '../components/RoomCard';
 import MainLayout from '../components/MainLayout';
 
@@ -215,7 +216,7 @@ export default function HomePage() {
                 <a key={post.id} href={`/partner-posts/${post.id}`} className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden group">
                   <div className="h-40 bg-gray-100">
                     <img
-                      src={(post.imageUrls && post.imageUrls.length > 0) ? (`http://localhost:8080${post.imageUrls[0]}`) : 'https://placehold.co/600x300?text=No+Image'}
+                      src={(post.imageUrls && post.imageUrls.length > 0) ? (resolveImageUrl(post.imageUrls[0])) : 'https://placehold.co/600x300?text=No+Image'}
                       alt={post.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                       onError={(e) => { e.target.src = 'https://placehold.co/600x300?text=Error'; }}

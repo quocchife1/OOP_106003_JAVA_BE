@@ -32,10 +32,11 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // --- 1. API CÔNG KHAI (Không cần Token) ---
                         .requestMatchers(
-                                "/api/auth/**", // Đăng nhập, đăng ký
-                                "/api/rooms/**", // Xem danh sách phòng
-                                "/api/branches/**", // Xem chi nhánh
-
+                                "/api/auth/**",          // Đăng nhập, đăng ký
+                            "/api/public/**",        // Public APIs (không cần token)
+                                "/api/rooms/**",         // Xem danh sách phòng
+                                "/api/branches/**",      // Xem chi nhánh
+                                
                                 // --- CHO PHÉP TRUY CẬP ẢNH ---
                                 "/uploads/**", // Nếu dùng WebConfig resource handler
                                 "/api/maintenance/images/**", // Controller serve ảnh maintenance

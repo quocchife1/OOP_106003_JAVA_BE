@@ -49,6 +49,16 @@ public class TenantServiceImpl implements TenantService {
     }
 
     @Override
+    @Transactional
+    public TenantResponse updateStatus(Long id, UserStatus status) {
+        Tenant existingTenant = tenantRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Tenant", "id", id));
+        existingTenant.setStatus(status);
+        Tenant updatedTenant = tenantRepository.save(existingTenant);
+        return tenantMapper.tenantToTenantResponse(updatedTenant);
+    }
+
+    @Override
     public List<Tenant> findAllTenants() {
         return tenantRepository.findAll();
     }

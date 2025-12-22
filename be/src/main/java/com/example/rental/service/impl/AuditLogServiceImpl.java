@@ -1,6 +1,7 @@
 package com.example.rental.service.impl;
 
 import com.example.rental.dto.audit.AuditLogDTO;
+import com.example.rental.dto.audit.AuditLogSearchCriteria;
 import com.example.rental.entity.*;
 import com.example.rental.mapper.AuditLogMapper;
 import com.example.rental.repository.AuditLogRepository;
@@ -9,13 +10,16 @@ import com.example.rental.service.AuditStatistics;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -189,5 +193,62 @@ public class AuditLogServiceImpl implements AuditLogService {
     public Page<AuditLogDTO> getAll(org.springframework.data.domain.Pageable pageable) {
         Page<AuditLog> page = auditLogRepository.findAll(pageable);
         return page.map(auditLogMapper::toDTO);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<AuditLogDTO> search(AuditLogSearchCriteria criteria, Pageable pageable) {
+        Specification<AuditLog> spec = (root, query, cb) -> {
+            java.util.List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
+
+            LocalDateTime from = parseDateTime(criteria.getFrom());
+            LocalDateTime to = parseDateTime(criteria.getTo());
+            if (from != null && to != null) {
+                predicates.add(cb.between(root.get("createdAt"), from, to));
+            } else if (from != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("createdAt"), from));
+            } else if (to != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("createdAt"), to));
+            }
+
+            if (criteria.getBranchId() != null) {
+                predicates.add(cb.equal(root.get("branchId"), criteria.getBranchId()));
+            }
+
+            if (criteria.getActor() != null && !criteria.getActor().isBlank()) {
+                String needle = "%" + criteria.getActor().toLowerCase() + "%";
+                predicates.add(cb.like(cb.lower(root.get("actorId")), needle));
+            }
+
+            if (criteria.getAction() != null && !criteria.getAction().isBlank()) {
+                predicates.add(cb.equal(root.get("action"), AuditAction.valueOf(criteria.getAction())));
+            }
+
+            if (criteria.getEntityType() != null && !criteria.getEntityType().isBlank()) {
+                predicates.add(cb.equal(cb.upper(root.get("targetType")), criteria.getEntityType().toUpperCase()));
+            }
+
+            if (criteria.getEntityId() != null) {
+                predicates.add(cb.equal(root.get("targetId"), criteria.getEntityId()));
+            }
+
+            return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+        };
+
+        return auditLogRepository.findAll(spec, pageable).map(auditLogMapper::toDTO);
+    }
+
+    private static LocalDateTime parseDateTime(String value) {
+        if (value == null || value.isBlank()) return null;
+        // Support both datetime-local (yyyy-MM-ddTHH:mm) and full ISO_DATE_TIME
+        try {
+            return LocalDateTime.parse(value, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        } catch (DateTimeParseException ignore) {
+            try {
+                return LocalDateTime.parse(value, DateTimeFormatter.ISO_DATE_TIME);
+            } catch (DateTimeParseException ignore2) {
+                return null;
+            }
+        }
     }
 }

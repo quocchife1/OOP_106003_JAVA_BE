@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,6 +25,7 @@ public class InvoiceController {
 
     @Operation(summary = "Tạo hóa đơn mới")
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','ACCOUNTANT')")
     public ResponseEntity<ApiResponseDto<InvoiceResponse>> create(@RequestBody InvoiceRequest request) {
         InvoiceResponse resp = invoiceService.create(request);
         return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED)
@@ -32,6 +34,7 @@ public class InvoiceController {
 
     @Operation(summary = "Lấy hóa đơn theo ID")
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','ACCOUNTANT','RECEPTIONIST') or hasRole('TENANT')")
     public ResponseEntity<ApiResponseDto<InvoiceResponse>> getById(@PathVariable Long id) {
         InvoiceResponse resp = invoiceService.getById(id);
         return ResponseEntity.ok(ApiResponseDto.success(200, "Invoice fetched", resp));
@@ -39,6 +42,7 @@ public class InvoiceController {
 
     @Operation(summary = "Danh sách hóa đơn")
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','ACCOUNTANT')")
     public ResponseEntity<ApiResponseDto<java.util.List<InvoiceResponse>>> getAll() {
         java.util.List<InvoiceResponse> list = invoiceService.getAll();
         return ResponseEntity.ok(ApiResponseDto.success(200, "Invoices fetched", list));
@@ -46,17 +50,29 @@ public class InvoiceController {
 
     @Operation(summary = "Danh sách hóa đơn (phân trang)")
     @GetMapping("/paged")
-    public ResponseEntity<ApiResponseDto<Page<InvoiceResponse>>> getAllPaged(org.springframework.data.domain.Pageable pageable) {
-        Page<InvoiceResponse> page = invoiceService.getAll(pageable);
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','ACCOUNTANT')")
+    public ResponseEntity<ApiResponseDto<Page<InvoiceResponse>>> getAllPaged(
+            org.springframework.data.domain.Pageable pageable,
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) Integer month,
+            @RequestParam(required = false) com.example.rental.entity.InvoiceStatus status
+    ) {
+        Page<InvoiceResponse> page = invoiceService.search(pageable, year, month, status);
         return ResponseEntity.ok(ApiResponseDto.success(200, "Invoices page fetched", page));
     }
 
     @Operation(summary = "Thanh toán hóa đơn (trực tiếp hoặc online)")
     @PostMapping("/{id}/pay")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','ACCOUNTANT') or hasRole('TENANT')")
     public ResponseEntity<ApiResponseDto<InvoiceResponse>> payInvoice(
             @PathVariable Long id,
             @RequestParam(defaultValue = "true") boolean direct
     ) {
+        // Tenants should not mark a payment as "direct" (cash). Keep API compatible and coerce to online.
+        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getAuthorities() != null && auth.getAuthorities().stream().anyMatch(a -> "ROLE_TENANT".equals(a.getAuthority()))) {
+            direct = false;
+        }
         InvoiceResponse resp = invoiceService.markPaid(id, direct);
         return ResponseEntity.ok(ApiResponseDto.success(200, "Invoice paid", resp));
     }
@@ -93,6 +109,7 @@ public class InvoiceController {
 
     @Operation(summary = "Gửi nhắc thanh toán cho 1 hóa đơn")
     @PostMapping("/{id}/send-reminder")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','ACCOUNTANT')")
     public ResponseEntity<ApiResponseDto<Void>> sendReminder(@PathVariable Long id) {
         invoiceService.sendReminderForInvoice(id);
         return ResponseEntity.ok(ApiResponseDto.success(200, "Reminder sent"));

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import staffApi from '../../api/staffApi';
+import resolveImageUrl from '../../utils/resolveImageUrl';
 
 export default function PostModeration() {
   const [posts, setPosts] = useState([]);
@@ -361,7 +362,113 @@ export default function PostModeration() {
             )}
           </div>
         </div>
+<<<<<<< Updated upstream
       )}
     </div>
+=======
+        {loading? (
+          <div>Tải dữ liệu...</div>
+        ) : posts.length===0 ? (
+          <div className="bg-white border rounded-xl p-6 text-center text-gray-600">Không có bản ghi phù hợp bộ lọc.</div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {posts.map(post=> (
+                <div key={post.id} className="bg-white rounded-xl border p-4 shadow-sm">
+                  <div className="flex items-center gap-2 mb-2">
+                    <input type="checkbox" checked={selectedIds.includes(post.id)} onChange={(e)=>{
+                      const checked = e.target.checked;
+                      setSelectedIds(prev=> checked? [...new Set([...prev, post.id])]: prev.filter(id=> id!==post.id));
+                    }} />
+                    <span className="text-xs text-gray-500">Chọn</span>
+                  </div>
+                  <div className="flex justify-between items-start">
+                    <h3 className="font-semibold mb-1 line-clamp-2">{post.title}</h3>
+                    <span className={`text-xs px-2 py-1 rounded ${post.status==='APPROVED'?'bg-emerald-100 text-emerald-700':post.status==='REJECTED'?'bg-red-100 text-red-700':'bg-yellow-100 text-yellow-700'}`}>{post.status}</span>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-2 line-clamp-3">{post.description}</p>
+                  <div className="text-xs text-gray-500 mb-2">Đối tác: {post.partnerName} • SĐT: {post.partnerPhone || '—'}</div>
+                  <div className="text-xs text-gray-500 mb-3">
+                    Tạo: {post.createdAt? new Date(post.createdAt).toLocaleString('vi-VN'): '—'} {post.approvedAt? `• Duyệt: ${new Date(post.approvedAt).toLocaleString('vi-VN')}`:''}
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-indigo-600 font-bold">{new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND'}).format(post.price)}</span>
+                    <div className="flex gap-2">
+                      <button className="px-3 py-1 rounded bg-gray-200" onClick={()=>openDetail(post.id)}>Xem</button>
+                      {status!=='APPROVED' && (
+                        <button className="px-3 py-1 rounded bg-green-600 text-white" onClick={()=>approve(post.id)}>Duyệt</button>
+                      )}
+                      {status!=='REJECTED' && (
+                        <button className="px-3 py-1 rounded bg-red-600 text-white" onClick={()=>reject(post.id)}>Từ chối</button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center justify-end gap-2 mt-6">
+              <button
+                className="px-3 py-1 rounded border"
+                disabled={page<=0}
+                onClick={()=> setPage(p=> Math.max(0, p-1))}
+              >Trang trước</button>
+              <span className="text-sm text-gray-600">Trang {page+1}/{Math.max(1,totalPages||1)}</span>
+              <button
+                className="px-3 py-1 rounded border"
+                disabled={totalPages===0 || page>=totalPages-1}
+                onClick={()=> setPage(p=> p+1)}
+              >Trang sau</button>
+            </div>
+          </>
+        )}
+
+        {selected && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl w-full max-w-4xl p-6 shadow-2xl">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">Kiểm tra nội dung tin #{selected.id}</h2>
+                <button className="text-gray-500" onClick={()=>setSelected(null)}>✕</button>
+              </div>
+              {detailLoading ? (
+                <div>Tải chi tiết...</div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-2">
+                    <div className="h-64 bg-gray-100 rounded-xl overflow-hidden mb-3">
+                      <img src={selected.imageUrls?.[0] ? resolveImageUrl(selected.imageUrls[0]) : 'https://placehold.co/800x400?text=No+Image'} alt="" className="w-full h-full object-cover"/>
+                    </div>
+                    <div className="flex gap-2 overflow-x-auto pb-2">
+                      {(selected.imageUrls||[]).map((u,i)=> (
+                        <img key={i} src={resolveImageUrl(u)} alt="thumb" className="w-24 h-24 object-cover rounded-lg border"/>
+                      ))}
+                    </div>
+                    <h3 className="text-lg font-semibold mt-4">{selected.title}</h3>
+                    <div className="text-sm text-gray-500 mb-2">{selected.address}</div>
+                    <div className="grid grid-cols-3 gap-3 text-sm">
+                      <div className="bg-gray-50 p-2 rounded">Giá: <b>{new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND'}).format(selected.price)}</b></div>
+                      <div className="bg-gray-50 p-2 rounded">Diện tích: <b>{selected.area} m²</b></div>
+                      <div className="bg-gray-50 p-2 rounded">Đối tác: <b>{selected.partnerName}</b></div>
+                    </div>
+                    <div className="mt-3 text-sm bg-gray-50 p-3 rounded">SĐT liên hệ: <b>{selected.partnerPhone || '—'}</b></div>
+                    <div className="mt-4 p-3 bg-white border rounded-lg max-h-48 overflow-auto whitespace-pre-line">
+                      {selected.description}
+                    </div>
+                  </div>
+                  <div className="lg:col-span-1">
+                    <label className="block text-sm font-medium mb-1">Lý do từ chối (nếu có)</label>
+                    <textarea className="w-full border rounded-lg p-2 min-h-[120px]" value={rejectReason} onChange={e=>setRejectReason(e.target.value)} placeholder="Ví dụ: ảnh không rõ ràng, thông tin giá chưa hợp lệ"/>
+                    <div className="flex flex-col gap-2 mt-4">
+                      <button className="px-4 py-2 rounded bg-green-600 text-white" onClick={()=>approve(selected.id)}>Duyệt tin</button>
+                      <button className="px-4 py-2 rounded bg-red-600 text-white" onClick={()=>reject(selected.id)}>Từ chối tin</button>
+                      <button className="px-4 py-2 rounded bg-gray-200" onClick={()=>setSelected(null)}>Đóng</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+>>>>>>> Stashed changes
   );
 }

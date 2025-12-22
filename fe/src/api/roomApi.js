@@ -1,6 +1,10 @@
 import axiosClient from './axiosClient';
 
 const roomApi = {
+  // GET /api/rooms
+  getAllRooms: (params) => {
+    return axiosClient.get('/api/rooms', { params });
+  },
   // GET /api/rooms/{id}
   getById: (id) => {
     return axiosClient.get(`/api/rooms/${id}`);
@@ -28,8 +32,8 @@ const roomApi = {
 
   // Admin: update room status manually
   updateRoomStatus: (roomId, status) => {
-    // Assuming PUT /api/rooms/{id} accepts a payload with status
-    return axiosClient.put(`/api/rooms/${roomId}`, { status });
+    // PUT /api/rooms/{id}/status
+    return axiosClient.put(`/api/rooms/${roomId}/status`, { status });
   },
 
   // Upload ảnh: POST /api/rooms/{roomId}/images

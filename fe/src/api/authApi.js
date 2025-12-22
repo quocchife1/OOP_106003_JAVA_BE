@@ -4,6 +4,10 @@ const authApi = {
   login: (data) => {
     return axiosClient.post('/api/auth/login', data);
   },
+
+  logout: () => {
+    return axiosClient.post('/api/auth/logout');
+  },
   
   // Dùng cho tab "Sinh viên" (Guest)
   registerGuest: (data) => {

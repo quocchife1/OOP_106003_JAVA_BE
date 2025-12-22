@@ -3,6 +3,7 @@ package com.example.rental.service;
 import com.example.rental.entity.AuditLog;
 import com.example.rental.entity.AuditAction;
 import com.example.rental.dto.audit.AuditLogDTO;
+import com.example.rental.dto.audit.AuditLogSearchCriteria;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -79,4 +80,9 @@ public interface AuditLogService {
      * Tính toán thống kê audit
      */
     AuditStatistics getStatistics(LocalDateTime startDate, LocalDateTime endDate, Long branchId);
+
+    /**
+     * Advanced search with multiple optional filters
+     */
+    Page<AuditLogDTO> search(AuditLogSearchCriteria criteria, Pageable pageable);
 }

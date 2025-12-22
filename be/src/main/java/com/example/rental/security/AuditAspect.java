@@ -12,7 +12,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.core.JsonProcessingException;
 
 @Aspect
 @Component
@@ -21,28 +20,37 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 public class AuditAspect {
     
     private final AuditLogService auditLogService;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final AuditEntityResolver auditEntityResolver;
+    private final ObjectMapper objectMapper;
     
     @Around("@annotation(audited)")
     public Object audit(ProceedingJoinPoint joinPoint, Audited audited) throws Throwable {
         Object result = null;
+
+        // Resolve targetId early so we can capture "oldValue" for update-like actions
+        Long targetId = extractTargetIdFromArgs(joinPoint.getArgs());
+        String oldValueJson = null;
+        if (targetId != null) {
+            Object oldEntity = auditEntityResolver.resolve(audited.targetType(), targetId);
+            oldValueJson = toJsonSafe(oldEntity);
+        }
         
         try {
             result = joinPoint.proceed();
             
             // Ghi nhận hành động thành công
-            logAuditAction(audited, result, null, "SUCCESS");
+            logAuditAction(audited, targetId, oldValueJson, result, null, "SUCCESS");
             
             return result;
         } catch (Exception e) {
             // Ghi nhận lỗi
-            logAuditAction(audited, null, e.getMessage(), "FAILURE");
+            logAuditAction(audited, targetId, oldValueJson, null, e.getMessage(), "FAILURE");
             
             throw e;
         }
     }
     
-    private void logAuditAction(Audited audited, Object result, String errorMessage, String status) {
+    private void logAuditAction(Audited audited, Long targetIdFromArgs, String oldValueJson, Object result, String errorMessage, String status) {
         try {
             // Lấy thông tin người dùng hiện tại (bảo vệ null)
             String actorId = "ANONYMOUS";
@@ -94,34 +102,69 @@ public class AuditAspect {
                 }
             }
 
-                    // Ghi nhận audit log (debug before saving)
-                    Long targetId = extractTargetId(result);
-                    Long branchId = extractBranchId(result);
-                    String newValueJson = toJsonSafe(result);
+            // Prefer targetId from args; otherwise try from result
+            Long targetId = targetIdFromArgs != null ? targetIdFromArgs : extractTargetId(result);
 
-                    log.debug("AuditAspect: preparing to save audit - actorId={}, actorRole={}, action={}, targetType={}, targetId={}, branchId={}, status={}",
-                        actorId, actorRole, actionToLog, audited.targetType(), targetId, branchId, status);
+            // If we still don't have oldValue but we have targetId, try resolving now
+            String safeOld = oldValueJson;
+            if (safeOld == null && targetId != null) {
+                safeOld = toJsonSafe(auditEntityResolver.resolve(audited.targetType(), targetId));
+            }
 
-                    auditLogService.logAction(
-                        actorId,
-                        actorRole,
-                        actionToLog,
-                        audited.targetType(),
-                        targetId,
-                        audited.description(),
-                        null,
-                        newValueJson,
-                        ipAddress,
-                        branchId, // branchId
-                        userAgent,
-                        status,
-                        errorMessage
-                    );
+            // For newValue, try resolver after write (fresh state) when possible
+            String safeNew = null;
+            if (targetId != null) {
+                Object newEntity = auditEntityResolver.resolve(audited.targetType(), targetId);
+                safeNew = toJsonSafe(newEntity);
+            }
+            if (safeNew == null) {
+                safeNew = toJsonSafe(result);
+            }
+
+            Long branchId = extractBranchId(result);
+
+                log.debug("AuditAspect: preparing to save audit - actorId={}, actorRole={}, action={}, targetType={}, targetId={}, branchId={}, status={}",
+                    actorId, actorRole, actionToLog, audited.targetType(), targetId, branchId, status);
+
+            auditLogService.logAction(
+                    actorId,
+                    actorRole,
+                    actionToLog,
+                    audited.targetType(),
+                    targetId,
+                    audited.description(),
+                    safeOld,
+                    safeNew,
+                    ipAddress,
+                    branchId,
+                    userAgent,
+                    status,
+                    errorMessage
+            );
             
             log.info("✓ Audit logged: {} - {} by {}", audited.action(), audited.targetType(), actorId);
         } catch (Exception e) {
             log.error("Error logging audit action", e);
         }
+    }
+
+    private Long extractTargetIdFromArgs(Object[] args) {
+        if (args == null || args.length == 0) return null;
+        for (Object arg : args) {
+            if (arg == null) continue;
+            if (arg instanceof Long) return (Long) arg;
+            if (arg instanceof Integer) return ((Integer) arg).longValue();
+
+            // try common getId()
+            try {
+                java.lang.reflect.Method m = arg.getClass().getMethod("getId");
+                Object idVal = m.invoke(arg);
+                if (idVal instanceof Long) return (Long) idVal;
+                if (idVal instanceof Integer) return ((Integer) idVal).longValue();
+            } catch (Exception ignored) {
+            }
+        }
+        return null;
     }
     
     private Long extractTargetId(Object result) {

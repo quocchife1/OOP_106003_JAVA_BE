@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import resolveImageUrl from '../utils/resolveImageUrl';
 
 const formatCurrency = (value) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
@@ -7,7 +8,7 @@ const formatCurrency = (value) => {
 
 export default function RoomCard({ room }) {
   const thumbnail = room.images && room.images.length > 0 
-    ? room.images[0].imageUrl 
+    ? resolveImageUrl(room.images[0].imageUrl)
     : 'https://placehold.co/600x400?text=No+Image';
 
   // Màu sắc trạng thái nhẹ nhàng hơn (Pastel)

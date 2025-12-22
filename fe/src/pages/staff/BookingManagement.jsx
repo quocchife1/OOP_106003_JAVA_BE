@@ -8,9 +8,9 @@ export default function BookingManagement(){
   const fetchRequests = async ()=>{
     setLoading(true);
     try{
-      const res = await reservationApi.getAllReservations?.();
-      const data = res?.data?.result || res?.data || [];
-      setRequests(Array.isArray(data)? data : (data.content || []));
+      const res = await reservationApi.getAllReservations();
+      const data = Array.isArray(res) ? res : (res?.content || []);
+      setRequests(Array.isArray(data) ? data : []);
     }catch(e){
       console.error('Lỗi tải yêu cầu đặt', e);
       setRequests([]);
@@ -21,8 +21,8 @@ export default function BookingManagement(){
 
   const approve = async (id)=>{
     try{
-      await reservationApi.updateStatus?.(id,'APPROVED');
-      setRequests(prev=> prev.map(r=> r.id===id? { ...r, status:'APPROVED'}: r));
+      await reservationApi.updateStatus(id,'RESERVED');
+      setRequests(prev=> prev.map(r=> r.id===id? { ...r, status:'RESERVED'}: r));
     }catch(e){ alert('Không thể duyệt'); }
   };
   const reject = async (id)=>{
@@ -52,10 +52,10 @@ export default function BookingManagement(){
               <tbody>
                 {requests.map(r=> (
                   <tr key={r.id} className="border-b">
-                    <td className="py-2">#{r.id}</td>
-                    <td>{r.tenantName || r.studentName}</td>
-                    <td>{r.roomName}</td>
-                    <td>{new Date(r.createdAt).toLocaleString('vi-VN')}</td>
+                    <td className="py-2">{r.reservationCode || `#${r.id}`}</td>
+                    <td>{r.tenantName || '-'}</td>
+                    <td>{r.roomNumber || r.roomCode || '-'}</td>
+                    <td>{r.reservationDate ? new Date(r.reservationDate).toLocaleString('vi-VN') : '-'}</td>
                     <td><span className="px-2 py-1 rounded bg-gray-100">{r.status}</span></td>
                     <td className="text-right">
                       <button className="px-3 py-1 rounded bg-green-600 text-white mr-2" onClick={()=>approve(r.id)}>Duyệt</button>

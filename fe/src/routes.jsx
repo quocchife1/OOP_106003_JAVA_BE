@@ -37,6 +37,17 @@ import ContractCreation from './pages/staff/ContractCreation';
 import Inspection from './pages/staff/Inspection';
 import PostModeration from './pages/staff/PostModeration';
 
+// --- Finance & Technical ---
+import InvoiceManagementPage from './pages/staff/finance/InvoiceManagementPage';
+import FinancialReportsPage from './pages/staff/finance/FinancialReportsPage';
+import MaintenanceBoardPage from './pages/staff/maintenance/MaintenanceBoardPage';
+
+// --- Admin & Director ---
+import DirectorDashboardPage from './pages/admin/DirectorDashboardPage';
+import UserEmployeeManagementPage from './pages/admin/UserEmployeeManagementPage';
+import SystemConfigurationPage from './pages/admin/SystemConfigurationPage';
+import AuditLogsPage from './pages/admin/AuditLogsPage';
+
 const appRoutes = [
   // ==============================
   // 1. PUBLIC ROUTES
@@ -153,7 +164,7 @@ const appRoutes = [
   {
     path: '/staff',
     element: (
-      <ProtectedRoute allowedRoles={['EMPLOYEE','ADMIN','RECEPTIONIST']}> 
+      <ProtectedRoute allowedRoles={['ADMIN','MANAGER','RECEPTIONIST','ACCOUNTANT','MAINTENANCE','SECURITY']}> 
         <MainLayout>
           <div className="min-h-[60vh]">
             <Outlet />
@@ -162,12 +173,38 @@ const appRoutes = [
       </ProtectedRoute>
     ),
     children: [
+      { path: 'finance/invoices', element: <InvoiceManagementPage /> },
+      { path: 'finance/reports', element: <FinancialReportsPage /> },
+      { path: 'maintenance/board', element: <MaintenanceBoardPage /> },
       { path: 'rooms', element: <RoomManagement /> },
       { path: 'bookings', element: <BookingManagement /> },
       { path: 'contracts/create', element: <ContractCreation /> },
       { path: 'inspection', element: <Inspection /> },
       { path: 'posts/moderation', element: <PostModeration /> },
       { path: '', element: <Navigate to='rooms' replace /> }
+    ]
+  }
+  ,
+  // ==============================
+  // 8. ADMIN & DIRECTOR PORTAL
+  // ==============================
+  {
+    path: '/admin',
+    element: (
+      <ProtectedRoute allowedRoles={['ADMIN','MANAGER']}>
+        <MainLayout>
+          <div className="min-h-[60vh]">
+            <Outlet />
+          </div>
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+    children: [
+      { path: 'dashboard', element: <DirectorDashboardPage /> },
+      { path: 'users', element: <UserEmployeeManagementPage /> },
+      { path: 'config', element: <SystemConfigurationPage /> },
+      { path: 'audit-logs', element: <AuditLogsPage /> },
+      { path: '', element: <Navigate to='dashboard' replace /> }
     ]
   }
 ];

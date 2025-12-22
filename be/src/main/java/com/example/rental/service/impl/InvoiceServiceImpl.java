@@ -4,6 +4,7 @@ import com.example.rental.dto.invoice.*;
 import com.example.rental.entity.*;
 import com.example.rental.mapper.InvoiceMapper;
 import com.example.rental.repository.*;
+import com.example.rental.security.Audited;
 import com.example.rental.service.EmailService;
 import com.example.rental.service.InvoiceService;
 import com.example.rental.utils.InvoiceEmailTemplateUtil;
@@ -29,6 +30,7 @@ public class InvoiceServiceImpl implements InvoiceService {
 
     @Override
     @Transactional
+    @Audited(action = AuditAction.CREATE_INVOICE, targetType = "INVOICE", description = "Tạo hóa đơn")
     public InvoiceResponse create(InvoiceRequest request) {
         Contract contract = contractRepository.findById(request.getContractId())
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy hợp đồng"));
@@ -128,7 +130,36 @@ public class InvoiceServiceImpl implements InvoiceService {
     }
 
     @Override
+    public org.springframework.data.domain.Page<InvoiceResponse> search(
+            org.springframework.data.domain.Pageable pageable,
+            Integer year,
+            Integer month,
+            InvoiceStatus status
+    ) {
+        boolean hasMonth = year != null && month != null;
+        if (hasMonth) {
+            java.time.LocalDate from = java.time.LocalDate.of(year, month, 1);
+            java.time.LocalDate to = from.plusMonths(1).minusDays(1);
+            if (status != null) {
+                return invoiceRepository.findByDueDateBetweenAndStatus(from, to, status, pageable)
+                        .map(InvoiceMapper::toResponse);
+            }
+            return invoiceRepository.findByDueDateBetween(from, to, pageable)
+                    .map(InvoiceMapper::toResponse);
+        }
+
+        if (status != null) {
+            return invoiceRepository.findByStatus(status, pageable)
+                    .map(InvoiceMapper::toResponse);
+        }
+
+        return invoiceRepository.findAll(pageable)
+                .map(InvoiceMapper::toResponse);
+    }
+
+    @Override
     @Transactional
+    @Audited(action = AuditAction.CONFIRM_PAYMENT, targetType = "INVOICE", description = "Ghi nhận thanh toán hóa đơn")
     public InvoiceResponse markPaid(Long id, boolean direct) {
         Invoice invoice = invoiceRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy hóa đơn"));

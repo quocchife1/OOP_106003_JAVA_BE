@@ -2,6 +2,7 @@ package com.example.rental.service;
 
 import com.example.rental.dto.invoice.InvoiceRequest;
 import com.example.rental.dto.invoice.InvoiceResponse;
+import com.example.rental.entity.InvoiceStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -12,6 +13,7 @@ public interface InvoiceService {
     InvoiceResponse getById(Long id);
     List<InvoiceResponse> getAll();
     Page<InvoiceResponse> getAll(Pageable pageable);
+    Page<InvoiceResponse> search(Pageable pageable, Integer year, Integer month, InvoiceStatus status);
     InvoiceResponse markPaid(Long id, boolean direct);
     void sendReminderForInvoice(Long id);
     void markOverdueAndNotify(Long id);

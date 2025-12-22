@@ -3,6 +3,7 @@ package com.example.rental.controller;
 import com.example.rental.dto.maintenance.*;
 import com.example.rental.service.MaintenanceRequestService;
 import com.example.rental.repository.TenantRepository;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ public class MaintenanceController {
     private final TenantRepository tenantRepository;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('TENANT')")
     public ResponseEntity<com.example.rental.dto.ApiResponseDto<MaintenanceResponse>> createRequest(
             @RequestPart(value = "tenantName", required = false) String tenantName,
             @RequestPart(value = "branchCode", required = false) String branchCode,
@@ -55,6 +57,35 @@ public class MaintenanceController {
             .body(com.example.rental.dto.ApiResponseDto.success(201, "Maintenance request created", resp));
     }
 
+    @GetMapping("/my-requests")
+    @PreAuthorize("hasRole('TENANT')")
+    public ResponseEntity<com.example.rental.dto.ApiResponseDto<java.util.List<MaintenanceResponse>>> getMyRequests() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        var tenantOpt = tenantRepository.findByUsernameIgnoreCase(username);
+        if (tenantOpt.isEmpty()) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND)
+                    .body(com.example.rental.dto.ApiResponseDto.success(404, "Tenant not found", null));
+        }
+        var list = maintenanceRequestService.getRequestsByTenant(tenantOpt.get().getId());
+        return ResponseEntity.ok(com.example.rental.dto.ApiResponseDto.success(200, "Maintenance requests fetched", list));
+    }
+
+    @GetMapping("/board")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','MAINTENANCE')")
+    public ResponseEntity<com.example.rental.dto.ApiResponseDto<java.util.List<MaintenanceResponse>>> getBoard() {
+        var list = maintenanceRequestService.getAllRequests();
+        return ResponseEntity.ok(com.example.rental.dto.ApiResponseDto.success(200, "Maintenance board fetched", list));
+    }
+
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','MAINTENANCE')")
+    public ResponseEntity<com.example.rental.dto.ApiResponseDto<MaintenanceResponse>> updateStatus(
+            @PathVariable Long id,
+            @RequestBody MaintenanceStatusUpdateRequest request) {
+        MaintenanceResponse resp = maintenanceRequestService.updateStatus(id, request.getStatus());
+        return ResponseEntity.ok(com.example.rental.dto.ApiResponseDto.success(200, "Maintenance status updated", resp));
+    }
+
     @GetMapping("/tenant/{tenantId}")
     public ResponseEntity<com.example.rental.dto.ApiResponseDto<java.util.List<MaintenanceResponse>>> getRequestsByTenant(@PathVariable Long tenantId) {
         java.util.List<MaintenanceResponse> list = maintenanceRequestService.getRequestsByTenant(tenantId);
@@ -68,6 +99,7 @@ public class MaintenanceController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','MAINTENANCE')")
     public ResponseEntity<com.example.rental.dto.ApiResponseDto<MaintenanceResponse>> updateRequest(
             @PathVariable Long id,
             @RequestParam(required = false) String resolution,

@@ -12,6 +12,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+
+import com.example.rental.entity.UserStatus;
 
 import java.util.List;
 
@@ -66,4 +69,23 @@ public class TenantController {
                 response)
         );
     }
+
+        /**
+         * Cập nhật trạng thái (Kích hoạt/Khóa) của người thuê
+         */
+        @PatchMapping("/{id}/status")
+        @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+        public ResponseEntity<ApiResponseDto<TenantResponse>> updateTenantStatus(
+                        @PathVariable Long id,
+                        @RequestParam UserStatus status) {
+                if (status != UserStatus.ACTIVE && status != UserStatus.BANNED) {
+                        throw new IllegalArgumentException("Trạng thái không hợp lệ. Chỉ chấp nhận ACTIVE hoặc BANNED.");
+                }
+                TenantResponse response = tenantService.updateStatus(id, status);
+                return ResponseEntity.ok(ApiResponseDto.success(
+                                HttpStatus.OK.value(),
+                                "Cập nhật trạng thái người thuê thành công",
+                                response)
+                );
+        }
 }
