@@ -23,7 +23,7 @@ public class DashboardController {
     private final DashboardService dashboardService;
     
     @GetMapping("/director")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+        @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTOR', 'MANAGER')")
     @Operation(summary = "Lấy dashboard tổng quát cho Giám đốc")
     public ResponseEntity<ApiResponseDto<DirectorDashboardDTO>> getDirectorDashboard(
             @RequestParam(required = false) Long branchId) {
@@ -32,7 +32,7 @@ public class DashboardController {
     }
     
     @GetMapping("/director/date-range")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+        @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTOR', 'MANAGER')")
     @Operation(summary = "Lấy dashboard với phạm vi ngày tùy chỉnh")
     public ResponseEntity<ApiResponseDto<DirectorDashboardDTO>> getDashboardByDateRange(
             @RequestParam(required = false) Long branchId,

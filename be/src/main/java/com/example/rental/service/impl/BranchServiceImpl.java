@@ -3,12 +3,21 @@ package com.example.rental.service.impl;
 import com.example.rental.dto.branch.BranchRequest;
 import com.example.rental.dto.branch.BranchResponse;
 import com.example.rental.entity.Branch;
+import com.example.rental.entity.Contract;
+import com.example.rental.entity.Room;
 import com.example.rental.exception.ResourceNotFoundException;
 import com.example.rental.mapper.BranchMapper;
 import com.example.rental.repository.BranchRepository;
+import com.example.rental.repository.ContractRepository;
+import com.example.rental.repository.EmployeeRepository;
+import com.example.rental.repository.InvoiceRepository;
+import com.example.rental.repository.MaintenanceRequestRepository;
+import com.example.rental.repository.ReservationRepository;
+import com.example.rental.repository.RoomRepository;
 import com.example.rental.service.BranchService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -20,6 +29,12 @@ public class BranchServiceImpl implements BranchService {
 
     private final BranchRepository branchRepository;
     private final BranchMapper branchMapper;
+    private final RoomRepository roomRepository;
+    private final ReservationRepository reservationRepository;
+    private final MaintenanceRequestRepository maintenanceRequestRepository;
+    private final ContractRepository contractRepository;
+    private final InvoiceRepository invoiceRepository;
+    private final EmployeeRepository employeeRepository;
 
     // ===== ENTITY LAYER =====
     @Override
@@ -91,10 +106,54 @@ public class BranchServiceImpl implements BranchService {
     }
 
     @Override
+    @Transactional
     public void deleteBranch(Long id) {
-        if (!branchRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Branch", "id", id);
+        Branch branch = branchRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Branch", "id", id));
+
+        String branchCode = branch.getBranchCode();
+
+        // Unassign employees that are pointing to this branch (FK via branch_code)
+        if (branchCode != null && !branchCode.isBlank()) {
+            employeeRepository.unassignBranchByBranchCode(branchCode);
         }
-        branchRepository.deleteById(id);
+
+        // Delete rooms and all related data
+        java.util.List<Room> rooms = (branchCode == null || branchCode.isBlank())
+                ? java.util.List.of()
+                : roomRepository.findByBranchCode(branchCode);
+
+        if (rooms != null && !rooms.isEmpty()) {
+            java.util.List<Long> roomIds = rooms.stream()
+                    .map(Room::getId)
+                    .filter(java.util.Objects::nonNull)
+                    .toList();
+
+            if (!roomIds.isEmpty()) {
+                // Invoices -> Contracts -> Rooms
+                java.util.List<Contract> contracts = contractRepository.findByRoom_IdIn(roomIds);
+                if (contracts != null && !contracts.isEmpty()) {
+                    java.util.List<Long> contractIds = contracts.stream()
+                            .map(Contract::getId)
+                            .filter(java.util.Objects::nonNull)
+                            .toList();
+                    if (!contractIds.isEmpty()) {
+                        invoiceRepository.deleteByContract_IdIn(contractIds);
+                    }
+                    contractRepository.deleteAll(contracts);
+                }
+
+                // Maintenance requests (cascades its images)
+                maintenanceRequestRepository.deleteByRoom_IdIn(roomIds);
+
+                // Reservations
+                reservationRepository.deleteByRoom_IdIn(roomIds);
+            }
+
+            // Rooms (cascades room images)
+            roomRepository.deleteAll(rooms);
+        }
+
+        branchRepository.delete(branch);
     }
 }

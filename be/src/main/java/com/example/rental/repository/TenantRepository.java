@@ -9,8 +9,11 @@ public interface TenantRepository extends JpaRepository<Tenant, Long> {
     Optional<Tenant> findByUsernameIgnoreCase(String username);
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
+    boolean existsByEmailAndIdNot(String email, Long id);
     Optional<Tenant> findByCccd(String cccd);
     boolean existsByCccd(String cccd);
+    boolean existsByCccdAndIdNot(String cccd, Long id);
     boolean existsByStudentId(String studentId);
+    boolean existsByStudentIdAndIdNot(String studentId, Long id);
     Optional<Tenant> findByFullName(String fullName);
 }

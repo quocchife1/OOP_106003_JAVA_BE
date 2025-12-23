@@ -109,4 +109,14 @@ public class MaintenanceController {
         MaintenanceResponse resp = maintenanceRequestService.updateRequest(id, resolution, status, technician, cost);
         return ResponseEntity.ok(com.example.rental.dto.ApiResponseDto.success(200, "Maintenance request updated", resp));
     }
+
+    @PostMapping("/{id}/invoice")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','MAINTENANCE')")
+    public ResponseEntity<com.example.rental.dto.ApiResponseDto<com.example.rental.dto.maintenance.MaintenanceInvoiceCreateResponse>> createInvoiceForTenantFault(
+            @PathVariable Long id,
+            @RequestBody com.example.rental.dto.maintenance.MaintenanceInvoiceCreateRequest request
+    ) {
+        var resp = maintenanceRequestService.createTenantFaultInvoice(id, request);
+        return ResponseEntity.ok(com.example.rental.dto.ApiResponseDto.success(200, "Maintenance invoice created", resp));
+    }
 }

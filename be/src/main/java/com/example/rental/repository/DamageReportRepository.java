@@ -17,6 +17,12 @@ public interface DamageReportRepository extends JpaRepository<DamageReport, Long
     
     @Query("SELECT dr FROM DamageReport dr WHERE dr.contract.id = :contractId")
     List<DamageReport> findByContractId(@Param("contractId") Long contractId);
+
+    @Query("SELECT dr FROM DamageReport dr WHERE dr.checkoutRequest.id = :requestId")
+    java.util.Optional<DamageReport> findByCheckoutRequestId(@Param("requestId") Long requestId);
+
+    @Query("SELECT dr FROM DamageReport dr WHERE dr.settlementInvoiceId = :invoiceId")
+    java.util.Optional<DamageReport> findBySettlementInvoiceId(@Param("invoiceId") Long invoiceId);
     
     @Query("SELECT dr FROM DamageReport dr WHERE dr.status = :status ORDER BY dr.createdAt DESC")
     Page<DamageReport> findByStatus(@Param("status") DamageReportStatus status, Pageable pageable);

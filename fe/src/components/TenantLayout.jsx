@@ -8,6 +8,7 @@ export default function TenantLayout() {
     { path: '/tenant/dashboard', label: 'Tổng quan', icon: '📊' },
     { path: '/tenant/reservations', label: 'Lịch sử giữ chỗ', icon: '📅' },
     { path: '/tenant/contracts', label: 'Hợp đồng của tôi', icon: '📝' },
+    { path: '/tenant/services', label: 'Dịch vụ phát sinh', icon: '🧾' },
     { path: '/tenant/invoices', label: 'Hóa đơn & Thanh toán', icon: '💳' },
     { path: '/tenant/maintenance', label: 'Yêu cầu bảo trì', icon: '🛠️' },
   ];

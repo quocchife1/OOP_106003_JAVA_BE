@@ -12,6 +12,7 @@ public interface RoomService {
     List<RoomResponse> getAllRooms();
     RoomResponse createRoom(RoomRequest request);
     RoomResponse updateRoom(Long id, RoomRequest request);
+    RoomResponse updateRoomDescription(Long id, String description);
     RoomResponse updateRoomStatus(Long id, RoomStatus status);
     void deleteRoom(Long id);
     RoomResponse getRoomById(Long id);

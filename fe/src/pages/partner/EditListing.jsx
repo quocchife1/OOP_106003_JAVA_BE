@@ -200,37 +200,13 @@ export default function EditListing() {
 
           {/* Existing images */}
           {existingImages.length > 0 && (
-            <h3 className="font-bold text-gray-700 border-b pb-2">3. Hình ảnh</h3>
-            
-            {existingImages.length > 0 && (
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Ảnh hiện tại</label>
-                    <div className="grid grid-cols-5 gap-2 mb-4">
-                        {existingImages.map((url, index) => (
-                            <div key={index} className="relative">
-                                <img 
-                              src={resolveImageUrl(url)} 
-                                    alt={`Existing ${index + 1}`} 
-                                    className="w-full h-24 object-cover rounded-lg border"
-                                    onError={(e) => { e.target.src = '/placeholder-image.png'; }}
-                                />
-                                {index === 0 && (
-                                    <span className="absolute bottom-1 left-1 bg-indigo-600 text-white text-xs px-2 py-0.5 rounded">Đại diện</span>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-            
-            {/* Upload new images */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Ảnh hiện tại</label>
               <div className="grid grid-cols-5 gap-2 mb-4">
                 {existingImages.map((url, index) => (
                   <div key={index} className="relative">
                     <img
-                      src={`http://localhost:8080${url}`}
+                      src={resolveImageUrl(url)}
                       alt={`Existing ${index + 1}`}
                       className="w-full h-24 object-cover rounded-lg border"
                       onError={(e) => { e.target.src = '/placeholder-image.png'; }}

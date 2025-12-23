@@ -12,5 +12,11 @@ public class SystemConfigDto {
     private BigDecimal electricPricePerUnit;
     private BigDecimal waterPricePerUnit;
     private BigDecimal lateFeePerDay;
+
+    // MoMo receiver (bank transfer)
+    private String momoReceiverName;
+    private String momoReceiverPhone;
+    private String momoReceiverQrUrl;
+
     private LocalDateTime updatedAt;
 }

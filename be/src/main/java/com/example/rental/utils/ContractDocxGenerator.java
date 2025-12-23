@@ -60,6 +60,7 @@ public class ContractDocxGenerator {
 
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", new Locale("vi", "VN"));
         String startDateFormatted = contract.getStartDate().format(dateFormatter);
+        String endDateFormatted = contract.getEndDate() != null ? contract.getEndDate().format(dateFormatter) : "";
 
         // Map placeholder -> value
         Map<String, String> values = new LinkedHashMap<>();
@@ -76,6 +77,7 @@ public class ContractDocxGenerator {
         values.put("{{DEPOSIT}}", depositFormatted);
         values.put("{{DEPOSIT_WORDS}}", depositInWords);
         values.put("{{START_DATE}}", startDateFormatted);
+        values.put("{{END_DATE}}", endDateFormatted);
 
         for (XWPFParagraph paragraph : doc.getParagraphs()) {
             String fullText = paragraph.getText();

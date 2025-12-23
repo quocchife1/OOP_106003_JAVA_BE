@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -39,6 +40,13 @@ public class Reservation {
     @CreationTimestamp
     @Column(name = "reservation_date")
     private LocalDateTime reservationDate;
+
+    @Column(name = "visit_date")
+    private LocalDate visitDate;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "visit_slot", length = 20)
+    private VisitTimeSlot visitSlot;
 
     @Column(name = "expiration_date")
     private LocalDateTime expirationDate;

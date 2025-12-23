@@ -37,6 +37,13 @@ public class DamageReport extends BaseEntity {
     private Contract contract;
 
     /**
+     * Yêu cầu trả phòng liên quan (nếu báo cáo dùng cho quy trình trả phòng)
+     */
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "checkout_request_id", unique = true)
+    private CheckoutRequest checkoutRequest;
+
+    /**
      * Nhân viên/Quản lý kiểm tra hư hỏng
      */
     @ManyToOne(fetch = FetchType.LAZY)
@@ -62,6 +69,12 @@ public class DamageReport extends BaseEntity {
      */
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal totalDamageCost;
+
+    /**
+     * Hóa đơn phát sinh từ biên bản trả phòng (nếu có)
+     */
+    @Column(name = "settlement_invoice_id")
+    private Long settlementInvoiceId;
 
     /**
      * Trạng thái báo cáo: DRAFT, SUBMITTED, APPROVED, REJECTED

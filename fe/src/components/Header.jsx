@@ -13,10 +13,16 @@ export default function Header() {
   const [showDropdown, setShowDropdown] = useState(false);
 
   const role = user?.role;
-  const isEmployeeRole = ['ADMIN', 'MANAGER', 'ACCOUNTANT', 'RECEPTIONIST', 'MAINTENANCE', 'SECURITY'].includes(role);
-  const canSeeFinance = ['ADMIN', 'MANAGER', 'ACCOUNTANT'].includes(role);
-  const canSeeMaintenanceBoard = ['ADMIN', 'MANAGER', 'MAINTENANCE'].includes(role);
-  const canSeeAdminDirector = ['ADMIN', 'MANAGER'].includes(role);
+  const isEmployeeRole = ['ADMIN', 'DIRECTOR', 'MANAGER', 'ACCOUNTANT', 'RECEPTIONIST', 'MAINTENANCE', 'SECURITY'].includes(role);
+  const canSeeFinance = ['ADMIN', 'DIRECTOR', 'MANAGER', 'ACCOUNTANT'].includes(role);
+  const canSeeMaintenanceBoard = ['ADMIN', 'MAINTENANCE'].includes(role);
+  const canSeeAdminDirector = ['ADMIN', 'DIRECTOR'].includes(role);
+
+  const staffHomePath = role === 'ACCOUNTANT'
+    ? '/staff/finance/invoices'
+    : role === 'MAINTENANCE'
+      ? '/staff/maintenance/board'
+      : '/staff/rooms';
 
   const isActive = (path) => location.pathname === path;
 
@@ -90,7 +96,7 @@ export default function Header() {
           )}
           {isEmployeeRole && (
             <Link
-              to="/staff/rooms"
+              to={staffHomePath}
               className={`relative font-medium transition-colors duration-200 ${location.pathname.startsWith('/staff') ? 'text-indigo-600' : 'text-gray-500 hover:text-indigo-600'}`}
             >
               Nội bộ
@@ -256,69 +262,8 @@ export default function Header() {
                         <div className="px-4 pt-3 pb-1">
                           <p className="text-xs text-gray-400 uppercase font-bold tracking-wider">Nội bộ</p>
                         </div>
-                        <Link
-                          to="/staff/rooms"
-                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors gap-2"
-                          onClick={() => setShowDropdown(false)}
-                        >
-                          <span>🏢</span> Quản lý phòng
-                        </Link>
-                        <Link
-                          to="/staff/bookings"
-                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors gap-2"
-                          onClick={() => setShowDropdown(false)}
-                        >
-                          <span>📅</span> Đặt chỗ
-                        </Link>
-                        <Link
-                          to="/staff/contracts/create"
-                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors gap-2"
-                          onClick={() => setShowDropdown(false)}
-                        >
-                          <span>📝</span> Tạo hợp đồng
-                        </Link>
-                        <Link
-                          to="/staff/inspection"
-                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors gap-2"
-                          onClick={() => setShowDropdown(false)}
-                        >
-                          <span>🧰</span> Biên bản bàn giao
-                        </Link>
-                        <Link
-                          to="/staff/posts/moderation"
-                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors gap-2"
-                          onClick={() => setShowDropdown(false)}
-                        >
-                          <span>📰</span> Duyệt tin đối tác
-                        </Link>
-
-                        {canSeeFinance && (
-                          <>
-                            <div className="px-4 pt-3 pb-1">
-                              <p className="text-xs text-gray-400 uppercase font-bold tracking-wider">Tài chính</p>
-                            </div>
-                            <Link
-                              to="/staff/finance/invoices"
-                              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors gap-2"
-                              onClick={() => setShowDropdown(false)}
-                            >
-                              <span>🧾</span> Quản lý hóa đơn
-                            </Link>
-                            <Link
-                              to="/staff/finance/reports"
-                              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors gap-2"
-                              onClick={() => setShowDropdown(false)}
-                            >
-                              <span>📈</span> Báo cáo tài chính
-                            </Link>
-                          </>
-                        )}
-
-                        {canSeeMaintenanceBoard && (
-                          <>
-                            <div className="px-4 pt-3 pb-1">
-                              <p className="text-xs text-gray-400 uppercase font-bold tracking-wider">Kỹ thuật</p>
-                            </div>
+                        {role === 'MAINTENANCE' ? (
+                          canSeeMaintenanceBoard && (
                             <Link
                               to="/staff/maintenance/board"
                               className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors gap-2"
@@ -326,6 +271,113 @@ export default function Header() {
                             >
                               <span>🛠️</span> Bảng bảo trì
                             </Link>
+                          )
+                        ) : (
+                          <>
+                            {role !== 'ACCOUNTANT' && (
+                              <Link
+                                to="/staff/rooms"
+                                className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors gap-2"
+                                onClick={() => setShowDropdown(false)}
+                              >
+                                <span>🏢</span> Quản lý phòng
+                              </Link>
+                            )}
+
+                            {['ADMIN', 'MANAGER'].includes(role) && (
+                              <Link
+                                to="/staff/cleaning-bookings"
+                                className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors gap-2"
+                                onClick={() => setShowDropdown(false)}
+                              >
+                                <span>🧹</span> Lịch vệ sinh
+                              </Link>
+                            )}
+
+                            {['ADMIN', 'MANAGER'].includes(role) && (
+                              <Link
+                                to="/staff/finance/meter-readings"
+                                className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors gap-2"
+                                onClick={() => setShowDropdown(false)}
+                              >
+                                <span>⚡</span> Nhập chỉ số điện/nước
+                              </Link>
+                            )}
+                            {role !== 'DIRECTOR' && role !== 'MANAGER' && role !== 'ACCOUNTANT' && (
+                              <Link
+                                to="/staff/bookings"
+                                className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors gap-2"
+                                onClick={() => setShowDropdown(false)}
+                              >
+                                <span>📅</span> Đặt chỗ
+                              </Link>
+                            )}
+                            {role !== 'DIRECTOR' && role !== 'MANAGER' && role !== 'ACCOUNTANT' && (
+                              <Link
+                                to="/staff/contracts/create"
+                                className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors gap-2"
+                                onClick={() => setShowDropdown(false)}
+                              >
+                                <span>📝</span> Tạo hợp đồng
+                              </Link>
+                            )}
+                            {role !== 'DIRECTOR' && role !== 'ACCOUNTANT' && (
+                              <Link
+                                to="/staff/inspection"
+                                className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors gap-2"
+                                onClick={() => setShowDropdown(false)}
+                              >
+                                <span>🧰</span> Biên bản bàn giao
+                              </Link>
+                            )}
+                            {role !== 'DIRECTOR' && role !== 'MANAGER' && role !== 'ACCOUNTANT' && (
+                              <Link
+                                to="/staff/posts/moderation"
+                                className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors gap-2"
+                                onClick={() => setShowDropdown(false)}
+                              >
+                                <span>📰</span> Duyệt tin đối tác
+                              </Link>
+                            )}
+
+                            {canSeeFinance && (
+                              <>
+                                <div className="px-4 pt-3 pb-1">
+                                  <p className="text-xs text-gray-400 uppercase font-bold tracking-wider">Tài chính</p>
+                                </div>
+                                <Link
+                                  to="/staff/finance/invoices"
+                                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors gap-2"
+                                  onClick={() => setShowDropdown(false)}
+                                >
+                                  <span>🧾</span> Hóa đơn & Doanh thu
+                                </Link>
+                                {role === 'ACCOUNTANT' && (
+                                  <Link
+                                    to="/staff/finance/generate"
+                                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors gap-2"
+                                    onClick={() => setShowDropdown(false)}
+                                  >
+                                    <span>➕</span> Tạo hóa đơn tháng
+                                  </Link>
+                                )}
+                              </>
+                            )}
+
+                            {canSeeMaintenanceBoard && (
+                              <>
+                                <div className="px-4 pt-3 pb-1">
+                                  <p className="text-xs text-gray-400 uppercase font-bold tracking-wider">Kỹ thuật</p>
+                                </div>
+                                <Link
+                                  to="/staff/maintenance/board"
+                                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors gap-2"
+                                  onClick={() => setShowDropdown(false)}
+                                >
+                                  <span>🛠️</span> Bảng bảo trì
+                                </Link>
+                              </>
+                            )}
                           </>
                         )}
 
@@ -342,12 +394,21 @@ export default function Header() {
                               <span>📊</span> Dashboard giám đốc
                             </Link>
                             <Link
-                              to="/admin/users"
+                              to="/admin/branches"
                               className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors gap-2"
                               onClick={() => setShowDropdown(false)}
                             >
-                              <span>👥</span> Quản lý người dùng
+                              <span>🏢</span> Quản lý chi nhánh
                             </Link>
+                            {role === 'ADMIN' && (
+                              <Link
+                                to="/admin/users"
+                                className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors gap-2"
+                                onClick={() => setShowDropdown(false)}
+                              >
+                                <span>👥</span> Quản lý người dùng
+                              </Link>
+                            )}
                             <Link
                               to="/admin/config"
                               className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors gap-2"

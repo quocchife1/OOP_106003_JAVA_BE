@@ -22,6 +22,7 @@ public class DirectorDashboardDTO {
     private BigDecimal totalRevenueThisYear;
     private BigDecimal totalRevenueAllTime;
     private List<MonthlyRevenueDTO> monthlyRevenueHistory;
+    private List<RevenueByBranchDTO> revenueByBranchThisMonth;
     
     // === OCCUPANCY RATE ===
     private Double occupancyRateThisMonth;

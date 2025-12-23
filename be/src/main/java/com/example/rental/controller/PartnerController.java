@@ -12,6 +12,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,6 +21,7 @@ import java.util.List;
 @RequestMapping("/api/management/partners")
 @RequiredArgsConstructor
 @Tag(name = "Partner Management")
+@PreAuthorize("hasAnyRole('ADMIN','DIRECTOR')")
 public class PartnerController {
 
     private final PartnerService partnerService;

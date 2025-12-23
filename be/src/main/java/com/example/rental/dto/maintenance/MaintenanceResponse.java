@@ -13,12 +13,15 @@ public class MaintenanceResponse {
     private Long id;
     private String requestCode;
     private String tenantName;
+    private String branchCode;
+    private String branchName;
     private String roomNumber;
     private String description;
     private String status;
     private String resolution;
     private BigDecimal cost;
     private String technicianName;
+    private Long invoiceId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<String> images;

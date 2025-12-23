@@ -2,6 +2,7 @@ package com.example.rental.service;
 
 import com.example.rental.dto.reservation.ReservationRequest;
 import com.example.rental.dto.reservation.ReservationResponse;
+import com.example.rental.dto.contract.ContractPrefillResponse;
 import com.example.rental.entity.Reservation;
 import com.example.rental.entity.ReservationStatus;
 import org.springframework.data.domain.Page;
@@ -45,7 +46,25 @@ public interface ReservationService {
     
     // Hủy phiếu đặt phòng (Chuyển sang CANCELLED)
     Reservation cancelReservation(Long reservationId);
+
+    // Lễ tân xử lý sau khi khách tham quan
+    ReservationResponse markCompleted(Long reservationId);
+
+    // Lễ tân xử lý trường hợp khách không đến
+    ReservationResponse markNoShow(Long reservationId);
+
+    // Tra cứu phiếu đặt theo mã/khách/phòng
+    Page<ReservationResponse> searchReservations(String query, Pageable pageable);
+
+    // Lễ tân xem tất cả phiếu theo chi nhánh mình (lọc status và/hoặc query nếu cần)
+    Page<ReservationResponse> getMyBranchReservations(String status, String query, Pageable pageable);
     
     // Chuyển phiếu đặt phòng thành hợp đồng
     Long convertReservationToContract(Long reservationId);
+
+    // Lấy dữ liệu prefill để lập hợp đồng từ phiếu giữ phòng
+    ContractPrefillResponse getContractPrefill(Long reservationId);
+
+    // Đánh dấu phiếu giữ phòng đã được lập hợp đồng (không giải phóng phòng)
+    ReservationResponse markContracted(Long reservationId);
 }

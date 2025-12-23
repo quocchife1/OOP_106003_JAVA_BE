@@ -25,7 +25,7 @@ public class AuditLogController {
     private final AuditLogService auditLogService;
     
     @GetMapping("/{targetType}/{targetId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTOR')")
     @Operation(summary = "Lấy lịch sử thay đổi của một entity")
     public ResponseEntity<com.example.rental.dto.ApiResponseDto<java.util.List<AuditLogDTO>>> getAuditTrail(
             @PathVariable String targetType,
@@ -35,7 +35,7 @@ public class AuditLogController {
     }
     
     @GetMapping("/{targetType}/{targetId}/paged")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTOR')")
     @Operation(summary = "Lấy lịch sử thay đổi (phân trang)")
     public ResponseEntity<com.example.rental.dto.ApiResponseDto<org.springframework.data.domain.Page<AuditLogDTO>>> getAuditTrailPaged(
             @PathVariable String targetType,
@@ -143,7 +143,7 @@ public class AuditLogController {
     }
 
     @GetMapping("/search")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTOR')")
     @Operation(summary = "Tìm audit log nâng cao (lọc nhiều điều kiện)")
     public ResponseEntity<com.example.rental.dto.ApiResponseDto<Page<AuditLogDTO>>> search(
             @RequestParam(required = false) String from,

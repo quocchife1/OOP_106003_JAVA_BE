@@ -156,6 +156,7 @@ export default function AuditLogsPage() {
         branchId: safeBranchId,
         page,
         size,
+        sort: 'id,desc',
       });
       setData(res);
     } catch (e) {
@@ -171,7 +172,8 @@ export default function AuditLogsPage() {
   }, [page, size]);
 
   const pageObj = data;
-  const items = Array.isArray(pageObj?.content) ? pageObj.content : [];
+  const itemsRaw = Array.isArray(pageObj?.content) ? pageObj.content : [];
+  const items = [...itemsRaw].sort((a, b) => (b?.id || 0) - (a?.id || 0));
   const totalPages = pageObj?.totalPages ?? 0;
 
   return (

@@ -9,4 +9,8 @@ public class SystemConfigUpsertRequest {
     private BigDecimal electricPricePerUnit;
     private BigDecimal waterPricePerUnit;
     private BigDecimal lateFeePerDay;
+
+    private String momoReceiverName;
+    private String momoReceiverPhone;
+    private String momoReceiverQrUrl;
 }

@@ -53,10 +53,18 @@ axiosClient.interceptors.response.use(
     if (error.response && error.response.data) {
       // Backend sometimes returns ApiResponseDto with message
       const data = error.response.data;
-      const message = data.message || (data.data && data.data.message) || null;
-      if (message) {
-        error.message = message;
-        error.response.data = { message };
+
+      // Prefer detailed error when message is too generic
+      const msg = data.message || null;
+      const detail = data.error || null;
+      const nested = (data.data && data.data.message) || null;
+      const normalizedMessage = (detail && (!msg || msg === 'Lỗi hệ thống'))
+        ? detail
+        : (msg || detail || nested);
+
+      if (normalizedMessage) {
+        error.message = normalizedMessage;
+        error.response.data = { ...data, message: normalizedMessage };
       }
     }
     return Promise.reject(error);

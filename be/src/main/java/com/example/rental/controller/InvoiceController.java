@@ -8,8 +8,11 @@ import com.example.rental.service.InvoiceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,16 +28,48 @@ public class InvoiceController {
 
     @Operation(summary = "Tạo hóa đơn mới")
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('ADMIN','DIRECTOR')")
     public ResponseEntity<ApiResponseDto<InvoiceResponse>> create(@RequestBody InvoiceRequest request) {
         InvoiceResponse resp = invoiceService.create(request);
         return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED)
                 .body(ApiResponseDto.success(201, "Invoice created", resp));
     }
 
+    @Operation(summary = "Tạo hóa đơn hàng tháng cho tất cả hợp đồng ACTIVE")
+    @PostMapping("/generate-monthly")
+    @PreAuthorize("hasAnyRole('ADMIN','DIRECTOR','ACCOUNTANT')")
+    public ResponseEntity<ApiResponseDto<com.example.rental.dto.invoice.MonthlyInvoiceGenerateResponse>> generateMonthly(
+            @RequestBody com.example.rental.dto.invoice.MonthlyInvoiceGenerateRequest request
+    ) {
+        var resp = invoiceService.generateMonthlyInvoices(request);
+        return ResponseEntity.ok(ApiResponseDto.success(200, "Monthly invoices generated", resp));
+    }
+
+    @Operation(summary = "Xem trước chi tiết hóa đơn tháng cho toàn bộ hợp đồng ACTIVE")
+    @GetMapping("/monthly-previews")
+    @PreAuthorize("hasAnyRole('ADMIN','DIRECTOR','ACCOUNTANT')")
+    public ResponseEntity<ApiResponseDto<java.util.List<com.example.rental.dto.invoice.ContractMonthlyInvoicePreviewResponse>>> monthlyPreviews(
+            @RequestParam int year,
+            @RequestParam int month
+    ) {
+        var rows = invoiceService.previewMonthlyInvoices(year, month);
+        return ResponseEntity.ok(ApiResponseDto.success(200, "Monthly invoice previews fetched", rows));
+    }
+
+    @Operation(summary = "Tạo hóa đơn tháng cho 1 hợp đồng")
+    @PostMapping("/generate-monthly/contracts/{contractId}")
+    @PreAuthorize("hasAnyRole('ADMIN','DIRECTOR','ACCOUNTANT')")
+    public ResponseEntity<ApiResponseDto<InvoiceResponse>> generateMonthlyForContract(
+            @PathVariable Long contractId,
+            @RequestBody com.example.rental.dto.invoice.MonthlyInvoiceGenerateRequest request
+    ) {
+        var resp = invoiceService.generateMonthlyInvoiceForContract(contractId, request);
+        return ResponseEntity.ok(ApiResponseDto.success(200, "Monthly invoice generated", resp));
+    }
+
     @Operation(summary = "Lấy hóa đơn theo ID")
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','ACCOUNTANT','RECEPTIONIST') or hasRole('TENANT')")
+    @PreAuthorize("hasAnyRole('ADMIN','DIRECTOR','MANAGER','ACCOUNTANT','RECEPTIONIST') or hasRole('TENANT')")
     public ResponseEntity<ApiResponseDto<InvoiceResponse>> getById(@PathVariable Long id) {
         InvoiceResponse resp = invoiceService.getById(id);
         return ResponseEntity.ok(ApiResponseDto.success(200, "Invoice fetched", resp));
@@ -42,7 +77,7 @@ public class InvoiceController {
 
     @Operation(summary = "Danh sách hóa đơn")
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('ADMIN','DIRECTOR','MANAGER','ACCOUNTANT')")
     public ResponseEntity<ApiResponseDto<java.util.List<InvoiceResponse>>> getAll() {
         java.util.List<InvoiceResponse> list = invoiceService.getAll();
         return ResponseEntity.ok(ApiResponseDto.success(200, "Invoices fetched", list));
@@ -50,7 +85,7 @@ public class InvoiceController {
 
     @Operation(summary = "Danh sách hóa đơn (phân trang)")
     @GetMapping("/paged")
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('ADMIN','DIRECTOR','MANAGER','ACCOUNTANT')")
     public ResponseEntity<ApiResponseDto<Page<InvoiceResponse>>> getAllPaged(
             org.springframework.data.domain.Pageable pageable,
             @RequestParam(required = false) Integer year,
@@ -63,15 +98,17 @@ public class InvoiceController {
 
     @Operation(summary = "Thanh toán hóa đơn (trực tiếp hoặc online)")
     @PostMapping("/{id}/pay")
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','ACCOUNTANT') or hasRole('TENANT')")
+    @PreAuthorize("hasAnyRole('ADMIN','DIRECTOR','ACCOUNTANT') or hasRole('TENANT')")
     public ResponseEntity<ApiResponseDto<InvoiceResponse>> payInvoice(
             @PathVariable Long id,
             @RequestParam(defaultValue = "true") boolean direct
     ) {
-        // Tenants should not mark a payment as "direct" (cash). Keep API compatible and coerce to online.
-        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getAuthorities() != null && auth.getAuthorities().stream().anyMatch(a -> "ROLE_TENANT".equals(a.getAuthority()))) {
-            direct = false;
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAccountant = auth != null && auth.getAuthorities() != null
+            && auth.getAuthorities().stream().anyMatch(a -> "ROLE_ACCOUNTANT".equals(a.getAuthority()));
+        if (isAccountant && !direct) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponseDto.error(HttpStatus.FORBIDDEN.value(), "Kế toán chỉ được xác nhận thu tiền mặt", null));
         }
         InvoiceResponse resp = invoiceService.markPaid(id, direct);
         return ResponseEntity.ok(ApiResponseDto.success(200, "Invoice paid", resp));
@@ -109,7 +146,7 @@ public class InvoiceController {
 
     @Operation(summary = "Gửi nhắc thanh toán cho 1 hóa đơn")
     @PostMapping("/{id}/send-reminder")
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('ADMIN','DIRECTOR','MANAGER','ACCOUNTANT')")
     public ResponseEntity<ApiResponseDto<Void>> sendReminder(@PathVariable Long id) {
         invoiceService.sendReminderForInvoice(id);
         return ResponseEntity.ok(ApiResponseDto.success(200, "Reminder sent"));

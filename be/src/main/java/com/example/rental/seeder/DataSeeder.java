@@ -178,12 +178,12 @@ public class DataSeeder implements CommandLineRunner {
     // ========== HÌNH ẢNH PHÒNG (FIX LỖI 404) ==========
     @Transactional
     private void seedRoomImages() {
-        if (roomImageRepository.count() > 0) {
-            System.out.println("✓ Hình ảnh phòng đã tồn tại, bỏ qua...");
-            return;
-        }
-
-        System.out.println("⚙ Đang tạo hình ảnh phòng (Bộ ảnh ổn định)...");
+                boolean hasAnyImages = roomImageRepository.count() > 0;
+                if (hasAnyImages) {
+                        System.out.println("⚙ Đang cập nhật/bổ sung hình ảnh phòng (CN03 sẽ được thay bộ ảnh nếu đã tồn tại)...");
+                } else {
+                        System.out.println("⚙ Đang tạo hình ảnh phòng (Bộ ảnh ổn định)...");
+                }
 
         List<Room> rooms = roomRepository.findAll();
         
@@ -221,18 +221,19 @@ public class DataSeeder implements CommandLineRunner {
         // Bộ 3: Quận 10 - Rộng rãi (Spacious / Luxury)
         List<List<String>> spaciousImages = Arrays.asList(
             Arrays.asList(
-                "https://images.unsplash.com/photo-1502005229766-3c8ef95562fe?w=800", // Giường đẹp view cửa sổ
-                "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800"  // Căn hộ rộng
+                                "https://picsum.photos/seed/cn03-spacious-1/1200/800",
+                                "https://picsum.photos/seed/cn03-spacious-2/1200/800"
             ),
             Arrays.asList(
-                "https://images.unsplash.com/photo-1616594039964-40891a909d99?w=800", // Tông màu kem sáng
-                "https://images.unsplash.com/photo-1560185127-6ed189bf02f4?w=800"  // Phòng khách rộng
+                                "https://picsum.photos/seed/cn03-spacious-3/1200/800",
+                                "https://picsum.photos/seed/cn03-spacious-4/1200/800"
             )
         );
 
                 int imageCount = 0;
                 Random random = new Random();
 
+                int updatedCount = 0;
                 for (Room room : rooms) {
                         List<String> selectedSet;
 
@@ -245,13 +246,51 @@ public class DataSeeder implements CommandLineRunner {
 
                         int randomIndex = random.nextInt(2); // Random 0 hoặc 1
 
+                        boolean isCN01 = branchCode != null && branchCode.contains("01");
+                        boolean isCN02 = branchCode != null && branchCode.contains("02");
+                        boolean isCN03 = branchCode != null && branchCode.contains("03");
+
                         // Chọn bộ ảnh theo mã chi nhánh (CN01/CN02/CN03)
-                        if (branchCode != null && branchCode.contains("01")) {
+                        if (isCN01) {
                                 selectedSet = modernImages.get(randomIndex);
-                        } else if (branchCode != null && branchCode.contains("02")) {
+                        } else if (isCN02) {
                                 selectedSet = cozyImages.get(randomIndex);
                         } else {
                                 selectedSet = spaciousImages.get(randomIndex);
+                        }
+
+                        // Nếu đã có ảnh:
+                        // - CN03: thay bộ ảnh (fix các ảnh lỗi như bạn report)
+                        // - CN01/CN02: giữ nguyên, chỉ bổ sung nếu thiếu
+                        if (hasAnyImages) {
+                                java.util.List<RoomImage> existing = roomImageRepository.findByRoomId(room.getId());
+                                if (!existing.isEmpty()) {
+                                        if (isCN03) {
+                                                RoomImage thumb = existing.stream()
+                                                        .filter(RoomImage::getIsThumbnail)
+                                                        .findFirst()
+                                                        .orElse(null);
+
+                                                RoomImage extra = existing.stream()
+                                                        .filter(img -> !Boolean.TRUE.equals(img.getIsThumbnail()))
+                                                        .findFirst()
+                                                        .orElse(null);
+
+                                                if (thumb == null || extra == null) {
+                                                        roomImageRepository.deleteAll(existing);
+                                                } else {
+                                                        thumb.setImageUrl(selectedSet.get(0));
+                                                        extra.setImageUrl(selectedSet.get(1));
+                                                        roomImageRepository.save(thumb);
+                                                        roomImageRepository.save(extra);
+                                                        updatedCount += 2;
+                                                        continue;
+                                                }
+                                        } else {
+                                                // CN01/CN02: đã có ảnh -> không tạo thêm để tránh duplicate
+                                                continue;
+                                        }
+                                }
                         }
 
             // --- LƯU 2 HÌNH ẢNH ---
@@ -275,14 +314,20 @@ public class DataSeeder implements CommandLineRunner {
             imageCount += 2;
         }
 
-        System.out.println("✓ Tạo thành công " + imageCount + " hình ảnh thật (Stable Links)");
+                if (hasAnyImages) {
+                        System.out.println("✓ Cập nhật " + updatedCount + " ảnh CN03, bổ sung " + imageCount + " ảnh thiếu (nếu có)");
+                } else {
+                        System.out.println("✓ Tạo thành công " + imageCount + " hình ảnh thật (Stable Links)");
+                }
     }
 
     // ========== DỊCH VỤ CHO THUÊ ==========
     @Transactional
     private void seedServices() {
         if (rentalServiceRepository.count() > 0) {
-            System.out.println("✓ Dịch vụ đã tồn tại, bỏ qua...");
+                        // Ensure key services are aligned even when DB already has data.
+                        normalizeServices();
+                        System.out.println("✓ Dịch vụ đã tồn tại, đã chuẩn hóa danh mục dịch vụ...");
             return;
         }
 
@@ -322,10 +367,10 @@ public class DataSeeder implements CommandLineRunner {
 
         // Vệ sinh
         RentalServiceItem cleaning = RentalServiceItem.builder()
-                .serviceName("Vệ sinh chung cư")
-                .price(BigDecimal.valueOf(60000))
-                .unit("phòng/tháng")
-                .description("Vệ sinh hành lang, cầu thang hàng tuần")
+                .serviceName("Vệ sinh")
+                .price(BigDecimal.valueOf(100000))
+                .unit("lần")
+                .description("Vệ sinh theo lịch (Thứ 5 08:00-11:00)")
                 .build();
 
         // Bảo vệ
@@ -348,6 +393,40 @@ public class DataSeeder implements CommandLineRunner {
 
         System.out.println("✓ Tạo thành công " + rentalServiceRepository.count() + " dịch vụ");
     }
+
+        private void normalizeServices() {
+                // Ensure service "Vệ sinh" exists and is priced 100,000.
+                rentalServiceRepository.findByServiceNameIgnoreCase("Vệ sinh")
+                                .ifPresent(s -> {
+                                        s.setPrice(BigDecimal.valueOf(100000));
+                                        s.setUnit("lần");
+                                        if (s.getDescription() == null || s.getDescription().isBlank()) {
+                                                s.setDescription("Vệ sinh theo lịch (Thứ 5 08:00-11:00)");
+                                        }
+                                        rentalServiceRepository.save(s);
+                                });
+
+                // Backward-compatible rename: "Vệ sinh chung cư" -> "Vệ sinh" (keep record but align name & price)
+                rentalServiceRepository.findByServiceNameIgnoreCase("Vệ sinh chung cư")
+                                .ifPresent(s -> {
+                                        s.setServiceName("Vệ sinh");
+                                        s.setPrice(BigDecimal.valueOf(100000));
+                                        s.setUnit("lần");
+                                        s.setDescription("Vệ sinh theo lịch (Thứ 5 08:00-11:00)");
+                                        rentalServiceRepository.save(s);
+                                });
+
+                // Ensure fixed security service exists
+                if (rentalServiceRepository.findByServiceNameIgnoreCase("Bảo vệ 24/7").isEmpty()) {
+                        RentalServiceItem security = RentalServiceItem.builder()
+                                        .serviceName("Bảo vệ 24/7")
+                                        .price(BigDecimal.valueOf(80000))
+                                        .unit("phòng/tháng")
+                                        .description("Nhân viên bảo vệ 24 giờ")
+                                        .build();
+                        rentalServiceRepository.save(security);
+                }
+        }
 
     // ========== GÓI DỊCH VỤ TIN ĐĂNG (PARTNER) ==========
     @Transactional
@@ -437,22 +516,27 @@ public class DataSeeder implements CommandLineRunner {
                 // Normalize existing employee usernames/passwords (so changes apply even when data already exists)
                 String hashedPassword = passwordEncoder.encode("123456");
                 normalizeEmployeeAccount("admin", "admin", hashedPassword);
+                normalizeEmployeeAccount("director", "dir", hashedPassword);
                 normalizeEmployeeAccount("manager", "mgr", hashedPassword);
                 normalizeEmployeeAccount("accountant", "acc", hashedPassword);
                 normalizeEmployeeAccount("maintenance", "mt", hashedPassword);
                 normalizeEmployeeAccount("receptionist", "rec", hashedPassword);
 
-        if (employeeRepository.count() > 0) {
-                        System.out.println("✓ Nhân viên đã tồn tại, đã chuẩn hoá username ngắn + password 123456 (nếu có thể), bỏ qua tạo mới...");
-            return;
-        }
-
-        System.out.println("⚙ Đang tạo nhân viên...");
+                System.out.println("⚙ Đang đảm bảo dữ liệu nhân viên (bổ sung nếu thiếu)...");
 
         List<Branch> branches = branchRepository.findAll();
 
-        // Admin
-        Employees admin = Employees.builder()
+
+        // Helper: create employee if missing
+        java.util.function.BiConsumer<String, Employees> ensure = (username, employee) -> {
+            Optional<Employees> existing = employeeRepository.findByUsername(username);
+            if (existing.isPresent()) return;
+            employeeRepository.save(employee);
+            System.out.println("✓ Seeded employee -> username: " + username + " , password: 123456");
+        };
+
+        // Admin (gán tạm 1 chi nhánh bất kỳ để không null)
+        ensure.accept("admin", Employees.builder()
                 .username("admin")
                 .employeeCode("EMP001")
                 .password(hashedPassword)
@@ -462,26 +546,23 @@ public class DataSeeder implements CommandLineRunner {
                 .position(EmployeePosition.ADMIN)
                 .status(UserStatus.ACTIVE)
                 .branch(branches.isEmpty() ? null : branches.get(0))
-                .build();
-        employeeRepository.save(admin);
-        System.out.println("✓ Seeded admin credentials -> username: admin , password: 123456");
+                .build());
 
-        // Manager
-        Employees manager = Employees.builder()
-                .username("mgr")
+        // Director (giám đốc) - quyền truy cập toàn hệ thống
+        ensure.accept("dir", Employees.builder()
+                .username("dir")
                 .employeeCode("EMP002")
                 .password(hashedPassword)
-                .fullName("Nguyễn Văn Quản Lý")
-                .email("manager@rentalsystem.com")
+                .fullName("Giám Đốc Hệ Thống")
+                .email("director@rentalsystem.com")
                 .phoneNumber("0901111111")
-                .position(EmployeePosition.MANAGER)
+                .position(EmployeePosition.DIRECTOR)
                 .status(UserStatus.ACTIVE)
-                .branch(branches.size() > 0 ? branches.get(0) : null)
-                .build();
-        employeeRepository.save(manager);
+                .branch(null)
+                .build());
 
-        // Accountant
-        Employees accountant = Employees.builder()
+        // Tài khoản chung (nếu cần)
+        ensure.accept("acc", Employees.builder()
                 .username("acc")
                 .employeeCode("EMP003")
                 .password(hashedPassword)
@@ -491,11 +572,9 @@ public class DataSeeder implements CommandLineRunner {
                 .position(EmployeePosition.ACCOUNTANT)
                 .status(UserStatus.ACTIVE)
                 .branch(branches.size() > 0 ? branches.get(0) : null)
-                .build();
-        employeeRepository.save(accountant);
+                .build());
 
-        // Maintenance Staff
-        Employees maintenance = Employees.builder()
+        ensure.accept("mt", Employees.builder()
                 .username("mt")
                 .employeeCode("EMP004")
                 .password(hashedPassword)
@@ -504,25 +583,102 @@ public class DataSeeder implements CommandLineRunner {
                 .phoneNumber("0903333333")
                 .position(EmployeePosition.MAINTENANCE)
                 .status(UserStatus.ACTIVE)
-                .branch(branches.size() > 1 ? branches.get(1) : null)
-                .build();
-        employeeRepository.save(maintenance);
+                .branch(branches.size() > 1 ? branches.get(1) : (branches.isEmpty() ? null : branches.get(0)))
+                .build());
 
-        // Receptionist
-        Employees receptionist = Employees.builder()
-                .username("rec")
-                .employeeCode("EMP005")
-                .password(hashedPassword)
-                .fullName("Phạm Thị Lễ Tân")
-                .email("receptionist@rentalsystem.com")
-                .phoneNumber("0904444444")
-                .position(EmployeePosition.RECEPTIONIST)
-                .status(UserStatus.ACTIVE)
-                .branch(branches.size() > 2 ? branches.get(2) : null)
-                .build();
-        employeeRepository.save(receptionist);
+        // Manager/Receptionist cho từng chi nhánh (CN01/CN02/CN03)
+        if (branches.size() > 0) {
+            ensure.accept("mgr1", Employees.builder()
+                    .username("mgr1")
+                    .employeeCode("EMP101")
+                    .password(hashedPassword)
+                    .fullName("Quản Lý CN01")
+                    .email("mgr1@rentalsystem.com")
+                    .phoneNumber("0910000001")
+                    .position(EmployeePosition.MANAGER)
+                    .status(UserStatus.ACTIVE)
+                    .branch(branches.get(0))
+                    .build());
 
-        System.out.println("✓ Tạo thành công " + employeeRepository.count() + " nhân viên (bao gồm admin)");
+            ensure.accept("rec1", Employees.builder()
+                    .username("rec1")
+                    .employeeCode("EMP201")
+                    .password(hashedPassword)
+                    .fullName("Lễ Tân CN01")
+                    .email("rec1@rentalsystem.com")
+                    .phoneNumber("0920000001")
+                    .position(EmployeePosition.RECEPTIONIST)
+                    .status(UserStatus.ACTIVE)
+                    .branch(branches.get(0))
+                    .build());
+        }
+
+        if (branches.size() > 1) {
+            ensure.accept("mgr2", Employees.builder()
+                    .username("mgr2")
+                    .employeeCode("EMP102")
+                    .password(hashedPassword)
+                    .fullName("Quản Lý CN02")
+                    .email("mgr2@rentalsystem.com")
+                    .phoneNumber("0910000002")
+                    .position(EmployeePosition.MANAGER)
+                    .status(UserStatus.ACTIVE)
+                    .branch(branches.get(1))
+                    .build());
+
+            ensure.accept("rec2", Employees.builder()
+                    .username("rec2")
+                    .employeeCode("EMP202")
+                    .password(hashedPassword)
+                    .fullName("Lễ Tân CN02")
+                    .email("rec2@rentalsystem.com")
+                    .phoneNumber("0920000002")
+                    .position(EmployeePosition.RECEPTIONIST)
+                    .status(UserStatus.ACTIVE)
+                    .branch(branches.get(1))
+                    .build());
+        }
+
+        if (branches.size() > 2) {
+            ensure.accept("mgr3", Employees.builder()
+                    .username("mgr3")
+                    .employeeCode("EMP103")
+                    .password(hashedPassword)
+                    .fullName("Quản Lý CN03")
+                    .email("mgr3@rentalsystem.com")
+                    .phoneNumber("0910000003")
+                    .position(EmployeePosition.MANAGER)
+                    .status(UserStatus.ACTIVE)
+                    .branch(branches.get(2))
+                    .build());
+
+            // giữ tương thích với username ngắn cũ "rec" (nếu bạn đang dùng), nhưng vẫn bổ sung "rec3" rõ ràng
+            ensure.accept("rec", Employees.builder()
+                    .username("rec")
+                    .employeeCode("EMP005")
+                    .password(hashedPassword)
+                    .fullName("Phạm Thị Lễ Tân")
+                    .email("receptionist@rentalsystem.com")
+                    .phoneNumber("0904444444")
+                    .position(EmployeePosition.RECEPTIONIST)
+                    .status(UserStatus.ACTIVE)
+                    .branch(branches.get(2))
+                    .build());
+
+            ensure.accept("rec3", Employees.builder()
+                    .username("rec3")
+                    .employeeCode("EMP203")
+                    .password(hashedPassword)
+                    .fullName("Lễ Tân CN03")
+                    .email("rec3@rentalsystem.com")
+                    .phoneNumber("0920000003")
+                    .position(EmployeePosition.RECEPTIONIST)
+                    .status(UserStatus.ACTIVE)
+                    .branch(branches.get(2))
+                    .build());
+        }
+
+        System.out.println("✓ Tổng nhân viên hiện có: " + employeeRepository.count());
     }
 
     // ========== PARTNER & POSTS (Đã sửa lỗi) ==========
@@ -622,7 +778,7 @@ public class DataSeeder implements CommandLineRunner {
                 .address("1000/1A Kha Vạn Cân, P. Linh Trung, TP. Thủ Đức")
                 .price(new BigDecimal("1500000"))
                 .area(new BigDecimal("25.0"))
-                .postType(PostType.PRIORITY)
+                .postType(PostType.VIP1)
                 .status(PostApprovalStatus.APPROVED)
                 .approvedAt(LocalDateTime.now().minusDays(1))
                 .build();
@@ -664,7 +820,7 @@ public class DataSeeder implements CommandLineRunner {
                 .address("88 Đảo Kim Cương, P. Thạnh Mỹ Lợi, TP. Thủ Đức")
                 .price(new BigDecimal("12000000"))
                 .area(new BigDecimal("40.0"))
-                .postType(PostType.PRIORITY)
+                .postType(PostType.VIP1)
                 .status(PostApprovalStatus.APPROVED)
                 .approvedAt(LocalDateTime.now().minusDays(2))
                 .build();
@@ -692,7 +848,7 @@ public class DataSeeder implements CommandLineRunner {
                 .address("12/34 Cộng Hòa, P.13, Q. Tân Bình, TP.HCM")
                 .price(new BigDecimal("15000000"))
                 .area(new BigDecimal("80.0"))
-                .postType(PostType.PRIORITY)
+                .postType(PostType.VIP1)
                 .status(PostApprovalStatus.APPROVED)
                 .approvedAt(LocalDateTime.now().minusDays(3))
                 .build();
@@ -747,7 +903,7 @@ public class DataSeeder implements CommandLineRunner {
                 .address("345 Điện Biên Phủ, P.15, Q. Bình Thạnh, TP.HCM")
                 .price(new BigDecimal("6800000"))
                 .area(new BigDecimal("35.0"))
-                .postType(PostType.PRIORITY)
+                .postType(PostType.VIP1)
                 .status(PostApprovalStatus.APPROVED)
                 .approvedAt(LocalDateTime.now().minusDays(1))
                 .build();
@@ -789,7 +945,7 @@ public class DataSeeder implements CommandLineRunner {
                 .address("88 Nguyễn Huệ, P. Bến Nghé, Q.1, TP.HCM")
                 .price(new BigDecimal("18000000"))
                 .area(new BigDecimal("50.0"))
-                .postType(PostType.PRIORITY)
+                .postType(PostType.VIP1)
                 .status(PostApprovalStatus.APPROVED)
                 .approvedAt(LocalDateTime.now().minusHours(12))
                 .build();

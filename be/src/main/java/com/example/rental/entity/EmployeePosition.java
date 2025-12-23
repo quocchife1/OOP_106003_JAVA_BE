@@ -6,5 +6,6 @@ public enum EmployeePosition {
     RECEPTIONIST,
     MAINTENANCE,
     SECURITY,
+    DIRECTOR,
     ADMIN
 }

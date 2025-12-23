@@ -5,6 +5,21 @@ const roomApi = {
   getAllRooms: (params) => {
     return axiosClient.get('/api/rooms', { params });
   },
+
+  // POST /api/rooms (ADMIN/DIRECTOR)
+  createRoom: (payload) => {
+    return axiosClient.post('/api/rooms', payload);
+  },
+
+  // PUT /api/rooms/{id} (ADMIN/DIRECTOR)
+  updateRoom: (id, payload) => {
+    return axiosClient.put(`/api/rooms/${id}`, payload);
+  },
+
+  // DELETE /api/rooms/{id} (ADMIN/DIRECTOR)
+  deleteRoom: (id) => {
+    return axiosClient.delete(`/api/rooms/${id}`);
+  },
   // GET /api/rooms/{id}
   getById: (id) => {
     return axiosClient.get(`/api/rooms/${id}`);
@@ -43,6 +58,26 @@ const roomApi = {
         'Content-Type': 'multipart/form-data',
       },
     });
+  },
+
+  // GET /api/rooms/{roomId}/images
+  listImages: (roomId) => {
+    return axiosClient.get(`/api/rooms/${roomId}/images`);
+  },
+
+  // PUT /api/rooms/{id}/description
+  updateDescription: (roomId, description) => {
+    return axiosClient.put(`/api/rooms/${roomId}/description`, { description });
+  },
+
+  // PUT /api/rooms/{roomId}/images/{imageId}/thumbnail
+  setThumbnail: (roomId, imageId) => {
+    return axiosClient.put(`/api/rooms/${roomId}/images/${imageId}/thumbnail`);
+  },
+
+  // DELETE /api/rooms/{roomId}/images/{imageId}
+  deleteImage: (roomId, imageId) => {
+    return axiosClient.delete(`/api/rooms/${roomId}/images/${imageId}`);
   }
 };
 

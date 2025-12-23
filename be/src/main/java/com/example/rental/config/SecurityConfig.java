@@ -4,6 +4,7 @@ import com.example.rental.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -34,8 +35,9 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/auth/**",          // Đăng nhập, đăng ký
                             "/api/public/**",        // Public APIs (không cần token)
-                                "/api/rooms/**",         // Xem danh sách phòng
-                                "/api/branches/**",      // Xem chi nhánh
+                                "/api/rooms/status/**",  // Xem danh sách phòng theo trạng thái
+                                "/api/rooms/branch/**",  // Xem danh sách phòng theo chi nhánh
+                                "/api/rooms/code/**",    // Xem phòng theo roomCode
                                 
                                 // --- CHO PHÉP TRUY CẬP ẢNH ---
                                 "/uploads/**", // Nếu dùng WebConfig resource handler
@@ -49,6 +51,10 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**")
                         .permitAll()
+
+            // Public GET-only endpoints
+            .requestMatchers(HttpMethod.GET, "/api/rooms/**").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/branches/**").permitAll()
 
                         // --- 2. API YÊU CẦU XÁC THỰC ---
                         .anyRequest().authenticated())

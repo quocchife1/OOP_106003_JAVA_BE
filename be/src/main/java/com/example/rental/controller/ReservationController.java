@@ -3,6 +3,7 @@ package com.example.rental.controller;
 import com.example.rental.dto.ApiResponseDto;
 import com.example.rental.dto.reservation.ReservationRequest;
 import com.example.rental.dto.reservation.ReservationResponse;
+import com.example.rental.dto.contract.ContractPrefillResponse;
 import com.example.rental.mapper.ReservationMapper;
 import com.example.rental.service.ReservationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -147,6 +148,71 @@ public class ReservationController {
                 response
         ));
     }
+
+        /**
+         * Lễ tân tra cứu phiếu đặt theo mã/khách/phòng
+         */
+        @GetMapping("/search")
+        @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'RECEPTIONIST')")
+        @Operation(summary = "Tra cứu phiếu giữ phòng")
+        public ResponseEntity<ApiResponseDto<Page<ReservationResponse>>> search(
+                        @RequestParam(name = "q") String q,
+                        Pageable pageable) {
+                Page<ReservationResponse> response = reservationService.searchReservations(q, pageable);
+                return ResponseEntity.ok(ApiResponseDto.success(
+                                HttpStatus.OK.value(),
+                                "Kết quả tra cứu giữ phòng",
+                                response
+                ));
+        }
+
+            /**
+             * Lễ tân xem danh sách phiếu trong chi nhánh của mình (mặc định: tất cả trạng thái)
+             */
+            @GetMapping("/my-branch")
+            @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'RECEPTIONIST')")
+            @Operation(summary = "Danh sách giữ phòng theo chi nhánh của tôi")
+            public ResponseEntity<ApiResponseDto<Page<ReservationResponse>>> getMyBranchReservations(
+                    @RequestParam(name = "status", required = false) String status,
+                    @RequestParam(name = "q", required = false) String q,
+                    Pageable pageable) {
+                Page<ReservationResponse> response = reservationService.getMyBranchReservations(status, q, pageable);
+                return ResponseEntity.ok(ApiResponseDto.success(
+                        HttpStatus.OK.value(),
+                        "Danh sách giữ phòng theo chi nhánh",
+                        response
+                ));
+            }
+
+        /**
+         * Lễ tân đánh dấu hoàn tất lịch tham khảo (khách xem xong nhưng không thuê)
+         */
+        @PutMapping("/{id}/mark-completed")
+        @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'RECEPTIONIST')")
+        @Operation(summary = "Đánh dấu hoàn tất lịch tham khảo")
+        public ResponseEntity<ApiResponseDto<ReservationResponse>> markCompleted(@PathVariable Long id) {
+                ReservationResponse response = reservationService.markCompleted(id);
+                return ResponseEntity.ok(ApiResponseDto.success(
+                                HttpStatus.OK.value(),
+                                "Đã cập nhật trạng thái hoàn tất.",
+                                response
+                ));
+        }
+
+        /**
+         * Lễ tân đánh dấu khách không đến
+         */
+        @PutMapping("/{id}/mark-no-show")
+        @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'RECEPTIONIST')")
+        @Operation(summary = "Đánh dấu khách không đến")
+        public ResponseEntity<ApiResponseDto<ReservationResponse>> markNoShow(@PathVariable Long id) {
+                ReservationResponse response = reservationService.markNoShow(id);
+                return ResponseEntity.ok(ApiResponseDto.success(
+                                HttpStatus.OK.value(),
+                                "Đã cập nhật trạng thái không đến.",
+                                response
+                ));
+        }
     
     /**
      * Chuyển giữ phòng thành hợp đồng (sau khi khách thanh toán deposit)
@@ -163,4 +229,34 @@ public class ReservationController {
                 contractId
         ));
     }
+
+        /**
+         * Lấy dữ liệu prefill để lập hợp đồng (không tạo hợp đồng ngay)
+         */
+        @GetMapping("/{id}/contract-prefill")
+        @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'RECEPTIONIST')")
+        @Operation(summary = "Prefill dữ liệu lập hợp đồng từ phiếu giữ phòng")
+        public ResponseEntity<ApiResponseDto<ContractPrefillResponse>> getContractPrefill(@PathVariable Long id) {
+                ContractPrefillResponse response = reservationService.getContractPrefill(id);
+                return ResponseEntity.ok(ApiResponseDto.success(
+                                HttpStatus.OK.value(),
+                                "Dữ liệu prefill lập hợp đồng",
+                                response
+                ));
+        }
+
+        /**
+         * Đánh dấu phiếu giữ phòng đã lập hợp đồng (không giải phóng phòng)
+         */
+        @PutMapping("/{id}/mark-contracted")
+        @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'RECEPTIONIST')")
+        @Operation(summary = "Đánh dấu phiếu giữ phòng đã lập hợp đồng")
+        public ResponseEntity<ApiResponseDto<ReservationResponse>> markContracted(@PathVariable Long id) {
+                ReservationResponse response = reservationService.markContracted(id);
+                return ResponseEntity.ok(ApiResponseDto.success(
+                                HttpStatus.OK.value(),
+                                "Đã đánh dấu phiếu giữ phòng đã lập hợp đồng.",
+                                response
+                ));
+        }
 }

@@ -24,7 +24,7 @@ public class ReportController {
     private final ReportService reportService;
 
     @GetMapping("/summary")
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('ADMIN','DIRECTOR','MANAGER','ACCOUNTANT')")
     @Operation(summary = "Financial summary report")
     public ResponseEntity<ApiResponseDto<FinancialReportSummaryDTO>> summary(
             @RequestParam LocalDate from,

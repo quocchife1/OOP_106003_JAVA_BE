@@ -22,6 +22,30 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
     List<Invoice> findByContract_Tenant_Id(Long tenantId);
     org.springframework.data.domain.Page<Invoice> findByContract_Tenant_Id(Long tenantId, org.springframework.data.domain.Pageable pageable);
 
+        // Branch-scoped invoices (used for MANAGER views)
+        List<Invoice> findByContract_BranchCode(String branchCode);
+        org.springframework.data.domain.Page<Invoice> findByContract_BranchCode(String branchCode, org.springframework.data.domain.Pageable pageable);
+
+        @org.springframework.data.jpa.repository.Query("""
+                select i from Invoice i
+                    join i.contract c
+                 where lower(c.branchCode) = lower(:branchCode)
+                     and (:from is null or i.dueDate >= :from)
+                     and (:to is null or i.dueDate <= :to)
+                     and (:status is null or i.status = :status)
+                """)
+        org.springframework.data.domain.Page<Invoice> searchForBranch(
+                        @org.springframework.data.repository.query.Param("branchCode") String branchCode,
+                        @org.springframework.data.repository.query.Param("from") LocalDate from,
+                        @org.springframework.data.repository.query.Param("to") LocalDate to,
+                        @org.springframework.data.repository.query.Param("status") InvoiceStatus status,
+                        org.springframework.data.domain.Pageable pageable
+        );
+
+    boolean existsByContract_IdAndBillingYearAndBillingMonth(Long contractId, Integer billingYear, Integer billingMonth);
+
+    void deleteByContract_IdIn(java.util.List<java.lang.Long> contractIds);
+
         @org.springframework.data.jpa.repository.Query("""
             select i from Invoice i
               join i.contract c

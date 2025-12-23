@@ -12,6 +12,7 @@ import java.util.List;
 public class DamageReportResponse {
 
     private Long id;
+    private Long checkoutRequestId;
     private Long contractId;
     private String contractCode;
     private String tenantName;
@@ -20,6 +21,7 @@ public class DamageReportResponse {
     private String description;
     private String damageDetails;
     private BigDecimal totalDamageCost;
+    private Long settlementInvoiceId;
     private String status; // DRAFT, SUBMITTED, APPROVED, REJECTED
     private String approverName;
     private String approverNote;

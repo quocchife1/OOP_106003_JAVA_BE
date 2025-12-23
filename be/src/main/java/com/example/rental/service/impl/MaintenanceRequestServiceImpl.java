@@ -6,6 +6,7 @@ import com.example.rental.dto.maintenance.*;
 import com.example.rental.repository.*;
 import com.example.rental.security.Audited;
 import com.example.rental.service.MaintenanceRequestService;
+import com.example.rental.service.InvoiceService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,8 @@ public class MaintenanceRequestServiceImpl implements MaintenanceRequestService 
     private final MaintenanceImageRepository maintenanceImageRepository;
     private final TenantRepository tenantRepository;
     private final RoomRepository roomRepository;
+    private final ContractRepository contractRepository;
+    private final InvoiceService invoiceService;
     private final MaintenanceMapper maintenanceMapper;
 
     // Đường dẫn lưu file (Relative path từ root project)
@@ -145,5 +148,66 @@ public class MaintenanceRequestServiceImpl implements MaintenanceRequestService 
                 .orElseThrow(() -> new EntityNotFoundException("Not found"));
         if (status != null) entity.setStatus(MaintenanceStatus.valueOf(status));
         return maintenanceMapper.toResponse(maintenanceRequestRepository.save(entity));
+    }
+
+    @Override
+    @Transactional
+    @Audited(action = AuditAction.CREATE_INVOICE, targetType = "INVOICE", description = "Tạo hóa đơn bảo trì do lỗi người thuê")
+    public MaintenanceInvoiceCreateResponse createTenantFaultInvoice(Long requestId, MaintenanceInvoiceCreateRequest request) {
+        MaintenanceRequest entity = maintenanceRequestRepository.findByIdForUpdate(requestId)
+                .orElseThrow(() -> new EntityNotFoundException("Not found"));
+
+        if (entity.getInvoiceId() != null) {
+            throw new IllegalStateException("Yêu cầu này đã có hóa đơn phát sinh");
+        }
+
+        java.math.BigDecimal amount = request != null ? request.getAmount() : null;
+        if (amount == null) {
+            amount = entity.getCost();
+        }
+        if (amount == null || amount.signum() <= 0) {
+            throw new IllegalArgumentException("Thiếu hoặc số tiền không hợp lệ");
+        }
+
+        java.time.LocalDate dueDate = request != null ? request.getDueDate() : null;
+        if (dueDate == null) {
+            dueDate = java.time.LocalDate.now().plusDays(7);
+        }
+
+        String note = request != null ? request.getNote() : null;
+        if (note == null || note.isBlank()) {
+            note = "Phí bảo trì (" + entity.getRequestCode() + ")";
+        }
+
+        if (entity.getRoom() == null || entity.getRoom().getId() == null) {
+            throw new IllegalStateException("Thiếu thông tin phòng");
+        }
+
+        Contract contract = contractRepository.findByRoomIdAndStatus(entity.getRoom().getId(), ContractStatus.ACTIVE);
+        if ((contract == null || contract.getId() == null) && entity.getTenant() != null && entity.getTenant().getId() != null) {
+            // Nếu chưa ACTIVE (ví dụ: SIGNED_PENDING_DEPOSIT) thì fallback theo hợp đồng gần nhất của đúng tenant
+            contract = contractRepository.findTopByRoomIdAndTenantIdOrderByCreatedAtDesc(
+                    entity.getRoom().getId(),
+                    entity.getTenant().getId()
+            );
+        }
+        if (contract == null || contract.getId() == null) {
+            throw new IllegalStateException("Không tìm thấy hợp đồng phù hợp cho phòng/người thuê này");
+        }
+
+        if (entity.getTenant() != null && contract.getTenant() != null
+                && entity.getTenant().getId() != null && contract.getTenant().getId() != null
+                && !entity.getTenant().getId().equals(contract.getTenant().getId())) {
+            throw new IllegalStateException("Hợp đồng ACTIVE không thuộc về người thuê của yêu cầu này");
+        }
+
+        var invoice = invoiceService.createMaintenanceInvoice(contract.getId(), dueDate, amount, note);
+        entity.setInvoiceId(invoice.getId());
+        MaintenanceRequest saved = maintenanceRequestRepository.save(entity);
+
+        return MaintenanceInvoiceCreateResponse.builder()
+                .maintenance(maintenanceMapper.toResponse(saved))
+                .invoice(invoice)
+                .build();
     }
 }

@@ -18,4 +18,5 @@ public class ContractCreateRequest {
     private String university;
     private BigDecimal deposit;
     private LocalDate startDate;
+    private LocalDate endDate;
 }

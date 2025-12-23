@@ -47,6 +47,27 @@ public class Contract {
     @Column(precision = 12, scale = 2)
     private BigDecimal deposit;
 
+    // --- Deposit payment tracking (after signed upload, before ACTIVE) ---
+    @Enumerated(EnumType.STRING)
+    @Column(name = "deposit_payment_method", length = 30)
+    private PaymentMethod depositPaymentMethod;
+
+    @Column(name = "deposit_paid_date")
+    private LocalDateTime depositPaidDate;
+
+    @Column(name = "deposit_payment_reference", length = 255)
+    private String depositPaymentReference;
+
+    @Column(name = "deposit_invoice_url", length = 255)
+    private String depositInvoiceUrl;
+
+    @Column(name = "deposit_receipt_url", length = 255)
+    private String depositReceiptUrl;
+
+    // Email reminder for checkout near contract end
+    @Column(name = "end_reminder_sent", nullable = false)
+    private boolean endReminderSent;
+
     @Enumerated(EnumType.STRING)
     @Column(length = 20, nullable = false)
     private ContractStatus status;

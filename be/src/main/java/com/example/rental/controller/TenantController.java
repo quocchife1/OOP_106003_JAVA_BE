@@ -22,6 +22,7 @@ import java.util.List;
 @RequestMapping("/api/management/tenants")
 @RequiredArgsConstructor
 @Tag(name = "Tenant Management")
+@PreAuthorize("hasAnyRole('ADMIN','DIRECTOR')")
 public class TenantController {
 
     private final TenantService tenantService;
@@ -74,7 +75,7 @@ public class TenantController {
          * Cập nhật trạng thái (Kích hoạt/Khóa) của người thuê
          */
         @PatchMapping("/{id}/status")
-        @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+        @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTOR')")
         public ResponseEntity<ApiResponseDto<TenantResponse>> updateTenantStatus(
                         @PathVariable Long id,
                         @RequestParam UserStatus status) {

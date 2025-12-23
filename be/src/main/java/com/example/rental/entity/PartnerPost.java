@@ -70,11 +70,13 @@ public class PartnerPost {
     private LocalDateTime approvedAt;
 
     @Column(name = "is_deleted", nullable = false)
+    @Builder.Default
     private boolean isDeleted = false;
 
     @Column(name = "reject_reason", length = 500)
     private String rejectReason;
 
     @Column(name = "views", nullable = false)
+    @Builder.Default
     private Integer views = 0;
 }

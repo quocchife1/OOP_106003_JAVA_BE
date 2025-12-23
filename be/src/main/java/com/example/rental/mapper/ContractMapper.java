@@ -9,7 +9,18 @@ public class ContractMapper {
     public ContractResponse toResponse(Contract contract) {
         ContractResponse dto = new ContractResponse();
         dto.setId(contract.getId());
-        dto.setTenantName(contract.getTenant() != null ? contract.getTenant().getFullName() : null);
+        if (contract.getTenant() != null) {
+            dto.setTenantId(contract.getTenant().getId());
+            dto.setTenantName(contract.getTenant().getFullName());
+            dto.setTenantPhoneNumber(contract.getTenant().getPhoneNumber());
+            dto.setTenantEmail(contract.getTenant().getEmail());
+            dto.setTenantAddress(contract.getTenant().getAddress());
+            dto.setTenantCccd(contract.getTenant().getCccd());
+            dto.setStudentId(contract.getTenant().getStudentId());
+            dto.setUniversity(contract.getTenant().getUniversity());
+        } else {
+            dto.setTenantName(null);
+        }
 
         // roomCode (nếu cần)
         dto.setRoomCode(contract.getRoom() != null ? contract.getRoom().getRoomCode() : null);
@@ -34,6 +45,12 @@ public class ContractMapper {
         dto.setCreatedAt(contract.getCreatedAt());
         dto.setContractFileUrl(contract.getContractFileUrl());
         dto.setSignedContractUrl(contract.getSignedContractUrl());
+
+        dto.setDepositPaymentMethod(contract.getDepositPaymentMethod() != null ? contract.getDepositPaymentMethod().name() : null);
+        dto.setDepositPaidDate(contract.getDepositPaidDate());
+        dto.setDepositPaymentReference(contract.getDepositPaymentReference());
+        dto.setDepositInvoiceUrl(contract.getDepositInvoiceUrl());
+        dto.setDepositReceiptUrl(contract.getDepositReceiptUrl());
         return dto;
     }
 }

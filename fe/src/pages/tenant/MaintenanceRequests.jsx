@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
+import contractApi from '../../api/contractApi';
 import maintenanceApi from '../../api/maintenanceApi';
 import resolveImageUrl from '../../utils/resolveImageUrl';
 
@@ -7,6 +8,8 @@ export default function MaintenanceRequests() {
   const { user } = useSelector((state) => state.auth);
   const [requests, setRequests] = useState([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
+
+  const [activeContract, setActiveContract] = useState(null);
   
   // State form
   const [formData, setFormData] = useState({
@@ -14,6 +17,24 @@ export default function MaintenanceRequests() {
     roomNumber: '',
     description: ''
   });
+
+  const normalizeContracts = (res) => {
+    let data = [];
+    if (Array.isArray(res)) data = res;
+    else if (res && res.content) data = res.content;
+    else if (res && res.data) data = res.data.result || res.data || [];
+    else data = res || [];
+    return Array.isArray(data) ? data : [];
+  };
+
+  const prefillFromContract = (contract) => {
+    if (!contract) return;
+    setFormData((prev) => ({
+      ...prev,
+      branchCode: contract.branchCode || prev.branchCode || '',
+      roomNumber: contract.roomNumber || contract.roomCode || prev.roomNumber || '',
+    }));
+  };
 
   // Quản lý file ảnh
   const [selectedFiles, setSelectedFiles] = useState([]); // Mảng các file thực tế
@@ -47,6 +68,27 @@ export default function MaintenanceRequests() {
   useEffect(() => {
     fetchRequests();
   }, [user]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await contractApi.getMyContracts();
+        const list = normalizeContracts(res);
+        const active = list.find((c) => c.status === 'ACTIVE') || list[0] || null;
+        setActiveContract(active);
+        prefillFromContract(active);
+      } catch (e) {
+        // Keep form usable even if contract lookup fails
+        setActiveContract(null);
+      }
+    })();
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (isFormOpen) {
+      prefillFromContract(activeContract);
+    }
+  }, [isFormOpen, activeContract]);
 
   // --- 2. Xử lý chọn ảnh (Cho phép chọn thêm, tối đa 5) ---
   const handleImageChange = (e) => {
@@ -98,7 +140,11 @@ export default function MaintenanceRequests() {
       
       // Reset form
       setIsFormOpen(false);
-      setFormData({ branchCode: '', roomNumber: '', description: '' });
+      setFormData({
+        branchCode: activeContract?.branchCode || '',
+        roomNumber: activeContract?.roomNumber || activeContract?.roomCode || '',
+        description: '',
+      });
       setSelectedFiles([]);
       setPreviewUrls([]);
       fetchRequests(); // Reload list
@@ -155,6 +201,9 @@ export default function MaintenanceRequests() {
                     value={formData.branchCode} 
                     onChange={e => setFormData({...formData, branchCode: e.target.value})} 
                 />
+                {activeContract?.branchCode ? (
+                  <div className="text-xs text-gray-500 mt-1">Tự động lấy từ hợp đồng đang hiệu lực.</div>
+                ) : null}
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Số phòng <span className="text-red-500">*</span></label>
@@ -163,6 +212,9 @@ export default function MaintenanceRequests() {
                     value={formData.roomNumber} 
                     onChange={e => setFormData({...formData, roomNumber: e.target.value})} 
                 />
+                {activeContract?.roomNumber || activeContract?.roomCode ? (
+                  <div className="text-xs text-gray-500 mt-1">Tự động lấy từ hợp đồng đang hiệu lực.</div>
+                ) : null}
               </div>
             </div>
             
@@ -307,7 +359,7 @@ export default function MaintenanceRequests() {
       {/* Modal Phóng To Ảnh */}
       {zoomImage && (
         <div 
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 cursor-zoom-out"
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 cursor-zoom-out"
             onClick={() => setZoomImage(null)}
         >
             <div className="relative max-w-5xl max-h-screen">

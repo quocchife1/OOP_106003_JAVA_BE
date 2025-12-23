@@ -26,7 +26,7 @@ public class BranchController {
     private final BranchService branchService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')") // nếu muốn USER cũng xem thì bỏ MANAGER
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTOR', 'MANAGER')") // nếu muốn USER cũng xem thì bỏ MANAGER
     @Operation(summary = "Lấy danh sách tất cả chi nhánh")
     public ResponseEntity<com.example.rental.dto.ApiResponseDto<java.util.List<BranchResponse>>> getAllBranches() {
         java.util.List<BranchResponse> data = branchService.getAllBranches();
@@ -34,7 +34,7 @@ public class BranchController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTOR', 'MANAGER')")
     @Operation(summary = "Lấy chi nhánh theo ID")
     public ResponseEntity<com.example.rental.dto.ApiResponseDto<BranchResponse>> getBranchById(@PathVariable Long id) {
         BranchResponse resp = branchService.getBranchById(id);
@@ -42,7 +42,7 @@ public class BranchController {
     }
 
     @GetMapping("/code/{branchCode}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTOR', 'MANAGER')")
     @Operation(summary = "Lấy chi nhánh theo mã code")
     public ResponseEntity<com.example.rental.dto.ApiResponseDto<BranchResponse>> getBranchByCode(@PathVariable String branchCode) {
         BranchResponse resp = branchService.getBranchByCode(branchCode);
@@ -50,7 +50,7 @@ public class BranchController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')") // ✅ chỉ ADMIN tạo được
+    @PreAuthorize("hasAnyRole('ADMIN','DIRECTOR')")
     @Operation(summary = "Tạo chi nhánh mới")
     public ResponseEntity<com.example.rental.dto.ApiResponseDto<BranchResponse>> createBranch(@Valid @RequestBody BranchRequest request) {
         BranchResponse resp = branchService.createBranch(request);
@@ -59,7 +59,7 @@ public class BranchController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','DIRECTOR')")
     @Operation(summary = "Cập nhật chi nhánh theo ID")
     public ResponseEntity<com.example.rental.dto.ApiResponseDto<BranchResponse>> updateBranch(
             @PathVariable Long id,
@@ -70,7 +70,7 @@ public class BranchController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','DIRECTOR')")
     @Operation(summary = "Xóa chi nhánh theo ID")
     public ResponseEntity<com.example.rental.dto.ApiResponseDto<Void>> deleteBranch(@PathVariable Long id) {
         branchService.deleteBranch(id);

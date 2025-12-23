@@ -32,8 +32,22 @@ public class Invoice {
     @Column(name = "due_date", nullable = false)
     private LocalDate dueDate;
 
+    // Used for monthly grouping/uniqueness (e.g., 2025-12)
+    @Column(name = "billing_year")
+    private Integer billingYear;
+
+    @Column(name = "billing_month")
+    private Integer billingMonth;
+
     @Column(name = "paid_date")
     private LocalDate paidDate;
+
+    // Cash/direct vs online (for accounting traceability)
+    @Column(name = "paid_direct")
+    private Boolean paidDirect;
+
+    @Column(name = "payment_reference", length = 100)
+    private String paymentReference;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20, nullable = false)

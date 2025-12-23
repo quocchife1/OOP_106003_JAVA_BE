@@ -54,7 +54,8 @@ export default function MyReservations({ isGuestView = false }) {
       'PENDING_CONFIRMATION': { color: 'bg-yellow-100 text-yellow-800', text: 'Chờ xác nhận' },
       'RESERVED': { color: 'bg-green-100 text-green-800', text: 'Đã giữ chỗ' },
       'CANCELLED': { color: 'bg-red-100 text-red-800', text: 'Đã hủy' },
-      'COMPLETED': { color: 'bg-blue-100 text-blue-800', text: 'Hoàn tất' }
+      'COMPLETED': { color: 'bg-blue-100 text-blue-800', text: 'Hoàn tất' },
+      'NO_SHOW': { color: 'bg-amber-100 text-amber-800', text: 'Không đến' }
     };
     const item = config[status] || { color: 'bg-gray-100 text-gray-800', text: status };
     return <span className={`px-3 py-1 rounded-full text-xs font-bold ${item.color}`}>{item.text}</span>;
@@ -108,13 +109,15 @@ export default function MyReservations({ isGuestView = false }) {
                                 <p className="font-medium">{item.reservationDate ? new Date(item.reservationDate).toLocaleDateString('vi-VN') : 'N/A'}</p>
                             </div>
                             <div>
-                                <p className="text-gray-400 text-xs uppercase font-bold">Dự kiến thuê</p>
-                                <p className="font-medium">
-                                    {item.startDate ? new Date(item.startDate).toLocaleDateString('vi-VN') : 'N/A'} 
-                                    {' → '}
-                                    {item.endDate ? new Date(item.endDate).toLocaleDateString('vi-VN') : 'N/A'}
-                                </p>
+                            <p className="text-gray-400 text-xs uppercase font-bold">Ngày tham khảo</p>
+                            <p className="font-medium">{item.visitDate ? new Date(item.visitDate).toLocaleDateString('vi-VN') : 'N/A'}</p>
                             </div>
+                          <div>
+                            <p className="text-gray-400 text-xs uppercase font-bold">Khung giờ</p>
+                            <p className="font-medium">
+                              {item.visitSlot === 'MORNING' ? 'Sáng (08:00 - 11:00)' : item.visitSlot === 'AFTERNOON' ? 'Chiều (13:30 - 16:00)' : (item.visitSlot || 'N/A')}
+                            </p>
+                          </div>
                         </div>
                         
                         {item.notes && (

@@ -8,7 +8,14 @@ import java.time.LocalDateTime;
 @Data
 public class ContractResponse {
     private Long id;
+    private Long tenantId;
     private String tenantName;
+    private String tenantPhoneNumber;
+    private String tenantEmail;
+    private String tenantAddress;
+    private String tenantCccd;
+    private String studentId;
+    private String university;
     private String roomCode;
     private String roomNumber;
     private String branchCode;
@@ -19,4 +26,11 @@ public class ContractResponse {
     private LocalDateTime createdAt;
     private String contractFileUrl;
     private String signedContractUrl;
+
+    // Deposit payment gate (after signed upload)
+    private String depositPaymentMethod;
+    private LocalDateTime depositPaidDate;
+    private String depositPaymentReference;
+    private String depositInvoiceUrl;
+    private String depositReceiptUrl;
 }

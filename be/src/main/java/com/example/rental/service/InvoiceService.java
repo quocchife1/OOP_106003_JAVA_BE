@@ -24,4 +24,15 @@ public interface InvoiceService {
     // Lấy hóa đơn dành cho 1 người thuê (tenant)
     java.util.List<com.example.rental.dto.invoice.InvoiceResponse> getInvoicesForTenant(Long tenantId);
     org.springframework.data.domain.Page<com.example.rental.dto.invoice.InvoiceResponse> getInvoicesForTenant(Long tenantId, org.springframework.data.domain.Pageable pageable);
+
+    com.example.rental.dto.invoice.MonthlyInvoiceGenerateResponse generateMonthlyInvoices(com.example.rental.dto.invoice.MonthlyInvoiceGenerateRequest request);
+
+    java.util.List<com.example.rental.dto.invoice.ContractMonthlyInvoicePreviewResponse> previewMonthlyInvoices(int year, int month);
+
+    com.example.rental.dto.invoice.InvoiceResponse generateMonthlyInvoiceForContract(Long contractId, com.example.rental.dto.invoice.MonthlyInvoiceGenerateRequest request);
+
+    /**
+     * Tạo hóa đơn phát sinh (không bị ràng buộc 1 hóa đơn/tháng) – dùng cho các trường hợp như bảo trì do lỗi người thuê.
+     */
+    InvoiceResponse createMaintenanceInvoice(Long contractId, java.time.LocalDate dueDate, java.math.BigDecimal amount, String note);
 }

@@ -16,4 +16,9 @@ public interface MaintenanceRequestService {
     MaintenanceResponse updateRequest(Long requestId, String resolution, String status, String technician, String cost);
 
     MaintenanceResponse updateStatus(Long requestId, String status);
+
+    com.example.rental.dto.maintenance.MaintenanceInvoiceCreateResponse createTenantFaultInvoice(
+            Long requestId,
+            com.example.rental.dto.maintenance.MaintenanceInvoiceCreateRequest request
+    );
 }

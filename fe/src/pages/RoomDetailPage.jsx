@@ -18,11 +18,28 @@ export default function RoomDetailPage() {
   // Modal Booking State
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [bookingLoading, setBookingLoading] = useState(false);
+
+  const computeAllowedVisitDates = () => {
+    const today = new Date();
+    const toISODate = (d) => d.toISOString().split('T')[0];
+
+    const unique = new Map();
+    for (let offset = 1; offset <= 3; offset++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() + offset);
+      const day = d.getDay(); // 0=Sun,6=Sat
+      if (day === 6) d.setDate(d.getDate() + 2);
+      if (day === 0) d.setDate(d.getDate() + 1);
+      unique.set(toISODate(d), toISODate(d));
+    }
+
+    return Array.from(unique.values()).sort();
+  };
   
   // Form Data
   const [bookingData, setBookingData] = useState({
-    startDate: '',
-    duration: 12, // Mặc định 12 tháng
+    visitDate: '',
+    visitSlot: 'MORNING',
     notes: ''
   });
 
@@ -51,37 +68,30 @@ export default function RoomDetailPage() {
       }
       return;
     }
-    // Set ngày mặc định là hôm nay
-    const today = new Date().toISOString().split('T')[0];
-    setBookingData(prev => ({ ...prev, startDate: today }));
+    const allowed = computeAllowedVisitDates();
+    setBookingData(prev => ({ ...prev, visitDate: allowed[0] || '', visitSlot: 'MORNING' }));
     setShowBookingModal(true);
   };
 
   // Submit Booking
   const handleConfirmBooking = async () => {
-    if (!bookingData.startDate) {
-        alert("Vui lòng chọn ngày bắt đầu thuê!");
-        return;
+    if (!bookingData.visitDate) {
+      alert('Vui lòng chọn ngày đến tham khảo!');
+      return;
     }
 
     setBookingLoading(true);
     try {
-      // Tính ngày kết thúc
-      const start = new Date(bookingData.startDate);
-      const end = new Date(start);
-      end.setMonth(end.getMonth() + parseInt(bookingData.duration));
-
-      // Payload gửi lên Backend (Format: YYYY-MM-DDTHH:mm:ss)
       const payload = {
         roomId: room.id,
-        startDate: `${bookingData.startDate}T08:00:00`,
-        endDate: `${end.toISOString().split('T')[0]}T17:00:00`,
+        visitDate: bookingData.visitDate,
+        visitSlot: bookingData.visitSlot,
         notes: bookingData.notes
       };
 
       await reservationApi.createReservation(payload);
       
-      alert("🎉 Đặt giữ chỗ thành công! Bạn có thể xem trạng thái trong trang cá nhân.");
+      alert("🎉 Đặt lịch tham khảo thành công! Bạn có thể xem trạng thái trong trang cá nhân.");
       setShowBookingModal(false);
       
       // Điều hướng thông minh: Nếu là Guest -> Tenant Dashboard (nếu đã có quyền) hoặc trang Profile
@@ -89,7 +99,7 @@ export default function RoomDetailPage() {
       
     } catch (error) {
       console.error(error);
-      const msg = error.response?.data?.message || "Có lỗi xảy ra khi đặt phòng.";
+      const msg = error.response?.data?.message || "Có lỗi xảy ra khi đặt lịch.";
       alert("❌ " + msg);
     } finally {
       setBookingLoading(false);
@@ -171,7 +181,7 @@ export default function RoomDetailPage() {
                   className={`w-full py-4 rounded-2xl font-bold text-lg transition-all duration-200 shadow-lg transform active:scale-[0.98] ${room.status === 'AVAILABLE' ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
                   onClick={handleBookClick}
                 >
-                  {room.status === 'AVAILABLE' ? 'Đặt Giữ Chỗ Ngay 📅' : 'Đã Được Thuê 🔒'}
+                  {room.status === 'AVAILABLE' ? 'Đặt Lịch Xem Phòng 📅' : 'Đã Được Thuê 🔒'}
                 </button>
             </div>
           </div>
@@ -181,7 +191,7 @@ export default function RoomDetailPage() {
         {showBookingModal && (
             <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
                 <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl animate-fade-in-up">
-                    <h3 className="text-xl font-bold text-gray-900 mb-4 border-b pb-2">Xác nhận giữ chỗ</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-4 border-b pb-2">Xác nhận lịch tham khảo</h3>
                     
                     <div className="space-y-4 mb-6 text-sm text-gray-600">
                         <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
@@ -189,19 +199,34 @@ export default function RoomDetailPage() {
                             <div className="flex justify-between"><span>Giá thuê:</span><span className="font-medium text-indigo-600">{room.price.toLocaleString()} đ/tháng</span></div>
                         </div>
 
-                        {/* Ngày bắt đầu */}
+                        {/* Ngày đến tham khảo */}
                         <div>
-                            <label className="block text-gray-700 font-medium mb-1">Ngày bắt đầu thuê (*)</label>
-                            <input type="date" required className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none" value={bookingData.startDate} onChange={(e) => setBookingData({...bookingData, startDate: e.target.value})} />
+                            <label className="block text-gray-700 font-medium mb-1">Ngày đến tham khảo (*)</label>
+                            <select
+                              required
+                              className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                              value={bookingData.visitDate}
+                              onChange={(e) => setBookingData({ ...bookingData, visitDate: e.target.value })}
+                            >
+                              {computeAllowedVisitDates().map((d) => (
+                                <option key={d} value={d}>
+                                  {new Date(d).toLocaleDateString('vi-VN')}
+                                </option>
+                              ))}
+                            </select>
+                            <p className="text-xs text-gray-500 mt-1">Chỉ cho phép đặt lịch trong 1–3 ngày tới (nếu rơi T7/CN sẽ tự dời sang T2).</p>
                         </div>
 
-                        {/* Thời hạn thuê */}
+                        {/* Khung giờ */}
                         <div>
-                            <label className="block text-gray-700 font-medium mb-1">Thời gian thuê</label>
-                            <select className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none" value={bookingData.duration} onChange={(e) => setBookingData({...bookingData, duration: e.target.value})}>
-                                <option value="6">6 Tháng</option>
-                                <option value="12">12 Tháng (1 Năm)</option>
-                                <option value="24">24 Tháng (2 Năm)</option>
+                            <label className="block text-gray-700 font-medium mb-1">Giờ muốn đến (*)</label>
+                            <select
+                              className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                              value={bookingData.visitSlot}
+                              onChange={(e) => setBookingData({ ...bookingData, visitSlot: e.target.value })}
+                            >
+                              <option value="MORNING">Sáng (08:00 - 11:00)</option>
+                              <option value="AFTERNOON">Chiều (13:30 - 16:00)</option>
                             </select>
                         </div>
 

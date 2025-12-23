@@ -16,6 +16,39 @@ export default function TenantDashboard() {
   });
   const [recentInvoices, setRecentInvoices] = useState([]);
 
+  const formatMoneyVnd = (value) => {
+    const num = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(num)) return '0 đ';
+    return `${num.toLocaleString()} đ`;
+  };
+
+  const formatLocalDate = (value) => {
+    if (!value) return '';
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return '';
+    return d.toLocaleDateString();
+  };
+
+  const getInvoiceTitle = (invoice) => {
+    const month = invoice?.billingMonth;
+    const year = invoice?.billingYear;
+    if (month != null && year != null) return `Tháng ${month}/${year}`;
+
+    // Ad-hoc invoices (settlement/maintenance/others) may not have billingMonth/billingYear
+    const due = invoice?.dueDate ? new Date(invoice.dueDate) : null;
+    if (due && !Number.isNaN(due.getTime())) {
+      return `Hóa đơn phát sinh (${due.getMonth() + 1}/${due.getFullYear()})`;
+    }
+    return 'Hóa đơn phát sinh';
+  };
+
+  const compareInvoicesDesc = (a, b) => {
+    const aTime = a?.createdAt ? Date.parse(a.createdAt) : a?.dueDate ? Date.parse(a.dueDate) : 0;
+    const bTime = b?.createdAt ? Date.parse(b.createdAt) : b?.dueDate ? Date.parse(b.dueDate) : 0;
+    if (bTime !== aTime) return bTime - aTime;
+    return (b?.id || 0) - (a?.id || 0);
+  };
+
   useEffect(() => {
     // 1. Fetch Hóa đơn (Invoices)
     const fetchInvoices = async () => {
@@ -34,7 +67,8 @@ export default function TenantDashboard() {
         }
 
         setInvoices(data);
-        setRecentInvoices(data.slice(0, 3));
+        const sorted = [...(data || [])].sort(compareInvoicesDesc);
+        setRecentInvoices(sorted.slice(0, 3));
         setStats(prev => ({ ...prev, unpaidInvoices: (data || []).filter(i => i.status === 'UNPAID').length }));
       } catch (err) {
         console.warn("Lỗi tải hóa đơn:", err.message || err);
@@ -144,12 +178,12 @@ export default function TenantDashboard() {
                   $
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900">Tháng {invoice.month}/{invoice.year}</p>
-                  <p className="text-sm text-gray-500">Hạn: {new Date(invoice.dueDate).toLocaleDateString()}</p>
+                  <p className="font-medium text-gray-900">{getInvoiceTitle(invoice)}</p>
+                  <p className="text-sm text-gray-500">Hạn: {formatLocalDate(invoice.dueDate) || 'Đang cập nhật'}</p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="font-bold text-gray-900">{invoice.totalAmount?.toLocaleString()} đ</p>
+                <p className="font-bold text-gray-900">{formatMoneyVnd(invoice.amount)}</p>
                 <span className={`text-xs font-bold px-2 py-1 rounded-full ${invoice.status === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                   {invoice.status}
                 </span>

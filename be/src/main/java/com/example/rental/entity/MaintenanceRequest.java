@@ -47,6 +47,10 @@ public class MaintenanceRequest extends BaseEntity {
 
     private String technicianName;
 
+    // Optional: hóa đơn phát sinh do lỗi người thuê (nếu có)
+    @Column(name = "invoice_id")
+    private Long invoiceId;
+
     // Danh sách ảnh kèm theo
     @OneToMany(mappedBy = "maintenanceRequest", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

@@ -24,4 +24,15 @@ public class FileStorageService {
 
         return filename;
     }
+
+    public boolean deleteFile(String subfolder, String filename) {
+        if (filename == null || filename.isBlank()) return false;
+        try {
+            Path uploadPath = Paths.get(UPLOAD_DIR, subfolder);
+            Path filePath = uploadPath.resolve(filename);
+            return Files.deleteIfExists(filePath);
+        } catch (Exception ex) {
+            return false;
+        }
+    }
 }

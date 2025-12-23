@@ -33,6 +33,16 @@ public class SystemConfig {
     @Column(name = "late_fee_per_day", precision = 12, scale = 2)
     private BigDecimal lateFeePerDay;
 
+    // --- Bank transfer receiver info (MoMo) ---
+    @Column(name = "momo_receiver_name", length = 120)
+    private String momoReceiverName;
+
+    @Column(name = "momo_receiver_phone", length = 30)
+    private String momoReceiverPhone;
+
+    @Column(name = "momo_receiver_qr_url", length = 255)
+    private String momoReceiverQrUrl;
+
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;

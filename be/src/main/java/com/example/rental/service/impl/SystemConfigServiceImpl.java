@@ -38,6 +38,10 @@ public class SystemConfigServiceImpl implements SystemConfigService {
         entity.setWaterPricePerUnit(request.getWaterPricePerUnit());
         entity.setLateFeePerDay(request.getLateFeePerDay());
 
+        entity.setMomoReceiverName(request.getMomoReceiverName());
+        entity.setMomoReceiverPhone(request.getMomoReceiverPhone());
+        entity.setMomoReceiverQrUrl(request.getMomoReceiverQrUrl());
+
         entity = systemConfigRepository.save(entity);
         return toDto(entity);
     }
@@ -47,6 +51,9 @@ public class SystemConfigServiceImpl implements SystemConfigService {
                 .electricPricePerUnit(entity.getElectricPricePerUnit())
                 .waterPricePerUnit(entity.getWaterPricePerUnit())
                 .lateFeePerDay(entity.getLateFeePerDay())
+                .momoReceiverName(entity.getMomoReceiverName())
+                .momoReceiverPhone(entity.getMomoReceiverPhone())
+                .momoReceiverQrUrl(entity.getMomoReceiverQrUrl())
                 .updatedAt(entity.getUpdatedAt())
                 .build();
     }

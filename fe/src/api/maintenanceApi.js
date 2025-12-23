@@ -21,7 +21,11 @@ const maintenanceApi = {
   },
   updateStatus: (id, status) => {
     return axiosClient.patch(`/api/maintenance/${id}/status`, { status });
-  }
+  },
+
+  createTenantFaultInvoice: (id, payload) => {
+    return axiosClient.post(`/api/maintenance/${id}/invoice`, payload);
+  },
 };
 
 export default maintenanceApi;

@@ -273,6 +273,7 @@ public class DamageReportServiceImpl implements DamageReportService {
     private DamageReportResponse toResponse(DamageReport damageReport) {
         DamageReportResponse response = new DamageReportResponse();
         response.setId(damageReport.getId());
+        response.setCheckoutRequestId(damageReport.getCheckoutRequest() != null ? damageReport.getCheckoutRequest().getId() : null);
         response.setContractId(damageReport.getContract().getId());
         response.setContractCode("C-" + damageReport.getContract().getId());
         response.setTenantName(
@@ -284,6 +285,7 @@ public class DamageReportServiceImpl implements DamageReportService {
         response.setDescription(damageReport.getDescription());
         response.setDamageDetails(damageReport.getDamageDetails());
         response.setTotalDamageCost(damageReport.getTotalDamageCost());
+        response.setSettlementInvoiceId(damageReport.getSettlementInvoiceId());
         response.setStatus(damageReport.getStatus().name());
         response.setApproverName(damageReport.getApprover() != null ? damageReport.getApprover().getFullName() : null);
         response.setApproverNote(damageReport.getApproverNote());

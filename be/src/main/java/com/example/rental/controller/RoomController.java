@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -31,6 +32,7 @@ public class RoomController {
 
     @Operation(summary = "Tạo phòng mới", description = "Thêm mới một phòng vào hệ thống với branchCode và roomNumber")
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN','DIRECTOR')")
     public ResponseEntity<com.example.rental.dto.ApiResponseDto<RoomResponse>> createRoom(@RequestBody RoomRequest request) {
         RoomResponse resp = roomService.createRoom(request);
         return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED)
@@ -39,13 +41,27 @@ public class RoomController {
 
     @Operation(summary = "Cập nhật phòng theo ID", description = "Chỉnh sửa thông tin phòng dựa trên ID")
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','DIRECTOR')")
     public ResponseEntity<com.example.rental.dto.ApiResponseDto<RoomResponse>> updateRoom(@PathVariable Long id, @RequestBody RoomRequest request) {
         RoomResponse resp = roomService.updateRoom(id, request);
         return ResponseEntity.ok(com.example.rental.dto.ApiResponseDto.success(200, "Room updated", resp));
     }
 
+    @Operation(summary = "Cập nhật mô tả phòng", description = "Manager/Admin cập nhật mô tả phòng")
+    @PutMapping("/{id}/description")
+        @PreAuthorize("hasAnyRole('ADMIN','DIRECTOR','MANAGER')")
+    public ResponseEntity<com.example.rental.dto.ApiResponseDto<RoomResponse>> updateRoomDescription(
+            @PathVariable Long id,
+            @RequestBody java.util.Map<String, String> body
+    ) {
+        String description = body == null ? null : body.get("description");
+        RoomResponse resp = roomService.updateRoomDescription(id, description);
+        return ResponseEntity.ok(com.example.rental.dto.ApiResponseDto.success(200, "Room description updated", resp));
+    }
+
     @Operation(summary = "Cập nhật trạng thái phòng", description = "Đổi trạng thái phòng (AVAILABLE, RESERVED, OCCUPIED, MAINTENANCE) mà không cần gửi toàn bộ RoomRequest")
     @PutMapping("/{id}/status")
+        @PreAuthorize("hasAnyRole('ADMIN','DIRECTOR','MANAGER')")
     public ResponseEntity<com.example.rental.dto.ApiResponseDto<RoomResponse>> updateRoomStatus(
             @PathVariable Long id,
             @RequestBody java.util.Map<String, String> body
@@ -65,6 +81,7 @@ public class RoomController {
 
     @Operation(summary = "Xóa phòng theo ID", description = "Xóa vĩnh viễn phòng trong hệ thống")
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','DIRECTOR')")
     public ResponseEntity<com.example.rental.dto.ApiResponseDto<Void>> deleteRoom(@PathVariable Long id) {
         roomService.deleteRoom(id);
         return ResponseEntity.ok(com.example.rental.dto.ApiResponseDto.success(200, "Room deleted"));
